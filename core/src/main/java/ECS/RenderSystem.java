@@ -8,7 +8,6 @@ import java.util.List;
 
 public class RenderSystem {
     public void render(List<Entity> entities, SpriteBatch spriteBatch) {
-        spriteBatch.begin();
         for (Entity e : entities) {
             if (e.hasComponent(CSprite.class) && e.hasComponent(CTransform.class)) {
                 CSprite spriteComponent = (CSprite) e.getComponent(CSprite.class);
@@ -26,6 +25,5 @@ public class RenderSystem {
                 sprite.draw(spriteBatch);
             }
         }
-        spriteBatch.end();
     }
 }

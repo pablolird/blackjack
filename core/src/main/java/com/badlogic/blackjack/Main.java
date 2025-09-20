@@ -1,19 +1,13 @@
     package com.badlogic.blackjack;
-
     import com.badlogic.gdx.ApplicationListener;
     import com.badlogic.gdx.Gdx;
     import com.badlogic.gdx.graphics.GL20;
-    import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-    import com.badlogic.gdx.utils.viewport.FitViewport;
 
     /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
     public class Main implements ApplicationListener {
         public static final int WORLD_WIDTH = 320;
         public static final int WORLD_HEIGHT = 180;
         private BlackjackGame game;
-        FitViewport viewport;
-        SpriteBatch spriteBatch;
-
 
         @Override
         public void create() {
