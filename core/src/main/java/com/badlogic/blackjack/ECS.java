@@ -6,7 +6,6 @@ import ECS.*;
 
 public class ECS {
     private EntityManager entityManager;
-    private MotionSystem motionSystem;
     private RenderSystem renderSystem;
     private Assets assets; // Store the assets manager
 
@@ -14,7 +13,6 @@ public class ECS {
     public ECS(Assets assets) {
         this.assets = assets;
         entityManager = new EntityManager();
-        motionSystem = new MotionSystem();
         renderSystem = new RenderSystem();
     }
 
@@ -26,9 +24,17 @@ public class ECS {
         board.addComponent(new CSprite(assets.board)); // Use the loaded board texture
     }
 
+    public void createCardEntity(String suit, String rank, float width, float height) {
+        Entity card = entityManager.createEntity("card");
+        card.addComponent(new CTransform(new Vector2(width/2, height/2),
+                                         new Vector2(assets.cardWidth, assets.cardHeight)));
+        card.addComponent(new CSprite(assets.getCardSprite(suit,rank))); // Use the loaded board texture
+        card.addComponent(new CCard(suit, rank));
+    }
+
 
     public void update(float delta) {
-        motionSystem.move(entityManager.getEntities());
+
     }
 
     public void render(SpriteBatch spriteBatch) {

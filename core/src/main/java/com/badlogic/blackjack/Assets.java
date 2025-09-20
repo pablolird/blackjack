@@ -12,15 +12,19 @@ public class Assets {
     public TextureRegion[][] cardRegions; // grid of cards
     public Map<String, Sprite> cardMap;
     public Texture board;
+    public int cardWidth = 48;
+    public int cardHeight = 64;
 
     public Assets() {}
 
+    public Sprite getCardSprite(String suit, String rank) {
+        return cardMap.get(suit+"_of_"+rank);
+    }
 
     public void loadFromFile() {
         board = new Texture(Gdx.files.internal("board.png"));
         Texture cardSheet = new Texture(Gdx.files.internal("cardSheet.png"));
-        int cardWidth = 48;
-        int cardHeight = 64;
+
 
         cardRegions = Sprite.split(cardSheet, cardWidth, cardHeight);
 
