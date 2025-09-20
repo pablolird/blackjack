@@ -1,5 +1,7 @@
 package com.badlogic.blackjack;
 
+import com.badlogic.gdx.math.Vector2;
+
 enum GameState { STARTING, DEALING, PLAYER_TURN }
 
 public class BlackjackLogic {
@@ -15,12 +17,10 @@ public class BlackjackLogic {
     }
 
     public void dealInitialCards() {
-        // ... logic to get card data from the deck ...
-        Card playerCard1 = deck.drawCard();
-
-        // Issue a high-level command to the Sequencer.
-        // Notice we are not touching the ECS at all.
-        sequencer.dealCardToPlayer(playerCard1);
+        // USAGE:
+        //  - GENERATE CARDS USING deck.drawCard()
+        //  - DEAL CARD TO PLAYER USING sequencer.dealCardToPlayer()
+        sequencer.dealTwoCardsInOrder();
     }
 
     public void update(float delta) {
