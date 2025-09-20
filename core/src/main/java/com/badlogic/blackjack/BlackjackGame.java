@@ -9,10 +9,15 @@ public class BlackjackGame {
     private ECS ecs;
     private Sequencer sequencer;
     private BlackjackLogic logic;
+    private Assets assets; // Add an instance of Assets
 
     public BlackjackGame(int width, int height) {
         viewport = new FitViewport(width, height);
         spriteBatch = new SpriteBatch();
+
+        assets = new Assets(); // Create and load assets
+        assets.loadFromFile();
+
         ecs = new ECS();
         sequencer = new Sequencer(ecs);
         logic = new BlackjackLogic(sequencer);
