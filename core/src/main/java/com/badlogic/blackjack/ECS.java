@@ -24,12 +24,14 @@ public class ECS {
         board.addComponent(new CSprite(assets.board)); // Use the loaded board texture
     }
 
-    public void createCardEntity(String suit, String rank, float width, float height) {
+    public Entity createCardEntity(String suit, String rank, float width, float height) {
         Entity card = entityManager.createEntity("card");
         card.addComponent(new CTransform(new Vector2(width/2, height/2),
                                          new Vector2(assets.cardWidth, assets.cardHeight)));
         card.addComponent(new CSprite(assets.getCardSprite(suit,rank))); // Use the loaded board texture
         card.addComponent(new CCard(suit, rank));
+
+        return card;
     }
 
 

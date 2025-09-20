@@ -10,6 +10,7 @@ public class BlackjackGame {
     private BlackjackLogic logic;
     private Assets assets; // Add an instance of Assets
 
+
     public BlackjackGame(int width, int height) {
         viewport = new FitViewport(width, height);
         spriteBatch = new SpriteBatch();

@@ -18,15 +18,14 @@ public class Assets {
     public Assets() {}
 
     public Sprite getCardSprite(String suit, String rank) {
-        return cardMap.get(suit+"_of_"+rank);
+        return cardMap.get(rank + "_of_" + suit);
     }
 
     public void loadFromFile() {
         board = new Texture(Gdx.files.internal("board.png"));
         Texture cardSheet = new Texture(Gdx.files.internal("cardSheet.png"));
 
-
-        cardRegions = Sprite.split(cardSheet, cardWidth, cardHeight);
+        cardRegions = TextureRegion.split(cardSheet, cardWidth, cardHeight);
 
         // Optional: build a flat map if you want easy name lookup
         cardMap = new HashMap<>();
