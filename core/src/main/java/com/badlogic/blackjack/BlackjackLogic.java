@@ -2,7 +2,7 @@ package com.badlogic.blackjack;
 
 import com.badlogic.gdx.math.Vector2;
 
-enum GameState { STARTING, DEALING, PLAYER_TURN }
+enum GameState { STARTING, DEALING, PLAYER_TURN, ANIMATIONS_IN_PROGRESS }
 
 public class BlackjackLogic {
     private Sequencer sequencer;
@@ -32,7 +32,12 @@ public class BlackjackLogic {
 
                 this.dealInitialCards();
 
-                gameState = GameState.PLAYER_TURN;
+                gameState = GameState.ANIMATIONS_IN_PROGRESS;
+                break;
+            case ANIMATIONS_IN_PROGRESS:
+                if (!sequencer.isBusy()) {
+                    gameState = GameState.PLAYER_TURN;
+                }
                 break;
             case PLAYER_TURN:
 

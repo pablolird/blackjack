@@ -51,4 +51,8 @@ public class Sequencer {
 
         addAction(new MoveToAction(cardEntity, targetPosition, 30f));
     }
+
+    public boolean isBusy() {
+        return !actions.isEmpty();
+    }
 }
