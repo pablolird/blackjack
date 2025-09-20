@@ -6,6 +6,7 @@ import ECS.*;
 
 
 public class ECS {
+    private Get g;
     private EntityManager entityManager;
     private RenderSystem renderSystem;
     private Assets assets; // Store the assets manager
@@ -19,6 +20,7 @@ public class ECS {
         this.assets = assets;
         entityManager = new EntityManager();
         renderSystem = new RenderSystem();
+        g = new Get();
     }
 
     // --- FACADE METHOD ---
@@ -29,9 +31,9 @@ public class ECS {
         board.addComponent(new CSprite(assets.board)); // Use the loaded board texture
     }
 
-    public Entity createCardEntity(String suit, String rank, float width, float height) {
+    public Entity createCardEntity(String suit, String rank) {
         Entity card = entityManager.createEntity("card");
-        card.addComponent(new CTransform(new Vector2(width/2, height/2+50f),
+        card.addComponent(new CTransform(new Vector2(g.world_dimensions.x/2, g.world_dimensions.y/2+50f),
                                          new Vector2(cardWidth, cardHeight)));
         card.addComponent(new CSprite(assets.getCardSprite(suit,rank))); // Use the loaded board texture
         card.addComponent(new CCard(suit, rank));

@@ -20,7 +20,11 @@ public class BlackjackLogic {
         // USAGE:
         //  - GENERATE CARDS USING deck.drawCard()
         //  - DEAL CARD TO PLAYER USING sequencer.dealCardToPlayer()
-        sequencer.dealTwoCardsInOrder();
+        sequencer.DealAllPlayersOrdered("PLAYER1_CARD",
+            "PLAYER2_CARD",
+            "PLAYER4_CARD",
+            "PLAYER6_CARD",
+            "PLAYER7_CARD");
     }
 
     public void update(float delta) {

@@ -12,6 +12,10 @@ public class SequenceAction implements Action {
         this.actions = new ArrayList<>(Arrays.asList(actions));
     }
 
+    public void add(Action a) {
+        actions.add(a);
+    }
+
     @Override
     public boolean update(float delta) {
         if (actions.isEmpty()) return true;

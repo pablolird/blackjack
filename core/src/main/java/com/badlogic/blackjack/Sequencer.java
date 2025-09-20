@@ -11,13 +11,13 @@ import java.util.Iterator;
 import java.util.List;
 
 public class Sequencer {
+    private Get g;
     private ECS ecs;
-    private int worldWidth = 320;
-    private int worldHeight = 180;
     private List<Action> actions = new ArrayList<>();
 
 
     public Sequencer(ECS ecs) {
+        this.g = new Get();
         this.ecs = ecs;
     }
 
@@ -30,24 +30,31 @@ public class Sequencer {
         actions.removeIf(a -> a.update(delta));
     }
 
+    public void DealAllPlayersOrdered(String... players) {
+        SequenceAction s = new SequenceAction();
+
+        for (String p : players) {
+            Action a = dealTwoCardsInOrder(p);
+            s.add(a);
+        }
+
+        this.addAction(s);
+    }
+
     // In Sequencer.java
-    public void dealTwoCardsInOrder() {
-        Entity card1 = ecs.createCardEntity("spades", "A",worldWidth, worldHeight);
-        Entity card2 = ecs.createCardEntity("hearts", "10",worldWidth, worldHeight);
+    private Action dealTwoCardsInOrder(String player) {
+        Entity card1 = ecs.createCardEntity("spades", "A");
+        Entity card2 = ecs.createCardEntity("hearts", "10");
 
-        Action move1 = new MoveToAction(card1, new Vector2(100, 50), 300f);
-        Action move2 = new MoveToAction(card2, new Vector2(125, 50), 300f);
-
+        Action move1 = new MoveToAction(card1, g.position.get(player), 300f);
+        Action move2 = new MoveToAction(card2, new Vector2(g.position.get(player)).add(5f, 5f), 300f);
         // Create a single SequenceAction that will run move1, then move2.
-        Action sequence = new SequenceAction(move1, move2);
-
-        // Add only the one container action to the main sequencer list.
-        this.addAction(sequence);
+        return new SequenceAction(move1, move2);
     }
 
     public void dealCardToPlayer(Card card, Vector2 targetPosition) {
         // Now, the Sequencer translates the command into ECS actions.
-        Entity cardEntity = ecs.createCardEntity(card.getSuit(), card.getRank(), worldWidth, worldHeight);
+        Entity cardEntity = ecs.createCardEntity(card.getSuit(), card.getRank());
 
         addAction(new MoveToAction(cardEntity, targetPosition, 30f));
     }
