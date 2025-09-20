@@ -1,32 +1,43 @@
 package com.badlogic.blackjack;
 
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+
 public class BlackjackGame {
+    private FitViewport viewport;
+    private SpriteBatch spriteBatch;
     private ECS ecs;
     private Sequencer sequencer;
     private BlackjackLogic logic;
 
-    public BlackjackGame() {
+    public BlackjackGame(int width, int height) {
+        viewport = new FitViewport(width, height);
+        spriteBatch = new SpriteBatch();
         ecs = new ECS();
         sequencer = new Sequencer(ecs);
         logic = new BlackjackLogic(sequencer);
     }
 
     public void update(float delta) {
-        // 1. Advance game logic
         logic.update(delta);
-
-        // 2. Advance actions/sequences
         sequencer.update(delta);
-
-        // 3. Advance ECS systems
         ecs.update(delta);
     }
 
     public void render() {
-        ecs.render();
+        viewport.apply();
+        spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
+
+        spriteBatch.begin();
+        ecs.render(spriteBatch);
+        spriteBatch.end();
+    }
+
+    public void resize(int width, int height) {
+        viewport.update(width, height, true);
     }
 
     public void dispose() {
-        ecs.dispose();
+        spriteBatch.dispose();
     }
 }
