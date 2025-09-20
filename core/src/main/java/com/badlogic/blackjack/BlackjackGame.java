@@ -1,5 +1,4 @@
 package com.badlogic.blackjack;
-
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
@@ -18,9 +17,11 @@ public class BlackjackGame {
         assets = new Assets(); // Create and load assets
         assets.loadFromFile();
 
-        ecs = new ECS();
+        ecs = new ECS(assets);
         sequencer = new Sequencer(ecs);
         logic = new BlackjackLogic(sequencer);
+
+        ecs.createBoardEntity(width,height);
     }
 
     public void update(float delta) {
