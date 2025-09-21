@@ -50,7 +50,7 @@ public class Sequencer {
 
         // 2. Move the second card and shift the first card at the same time
         Action moveSecondCard = new MoveToAction(secondCardEntity, firstCardPosition, g.rotation.get("PLAYER" + (playerIndex + 1)) ,0.25f);
-        Action shiftFirstCard = new ShiftToAction(firstCardEntity, new Vector2(-5, 0), 0.25f);
+        Action shiftFirstCard = new ShiftToAction(firstCardEntity, g.shift.get("PLAYER" + (playerIndex + 1)), 0.25f);
 
         Action parallelMoveAndShift = new ParallelAction(moveSecondCard, shiftFirstCard);
 

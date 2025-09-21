@@ -11,6 +11,7 @@ public class Get {
 
     HashMap<String, Vector2> position;
     HashMap<String, Float> rotation;
+    HashMap<String, Vector2> shift;
     Vector2 world_dimensions;
 
     public Get() {
@@ -34,6 +35,15 @@ public class Get {
         rotation.put("PLAYER5", 0f);
         rotation.put("PLAYER6", 270f);
         rotation.put("PLAYER7", 270f);
+
+        shift = new HashMap<>();
+        shift.put("PLAYER1", new Vector2(0,-5));
+        shift.put("PLAYER2", new Vector2(0,-5));
+        shift.put("PLAYER3", new Vector2(-5,0));
+        shift.put("PLAYER4", new Vector2(-5,0));
+        shift.put("PLAYER5", new Vector2(-5,0));
+        shift.put("PLAYER6", new Vector2(0,-5));
+        shift.put("PLAYER7", new Vector2(0,-5));
     }
 
 }
