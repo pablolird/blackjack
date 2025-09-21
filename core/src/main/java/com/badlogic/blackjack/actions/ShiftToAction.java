@@ -5,41 +5,40 @@ import ECS.Entity;
 import com.badlogic.gdx.math.Vector2;
 
 public class ShiftToAction implements Action {
-    private Entity entity;
-    private Vector2 shiftAmount;
-    private Vector2 targetPosition;
-    private float speed;
-    private CTransform transform;
-    private boolean initialized = false;
+    private final Entity entity;
+    private final Vector2 shiftAmount;
+    private final float duration;
+    private float elapsedTime = 0f;
 
-    public ShiftToAction(Entity entity, Vector2 shiftAmount, float speed) {
+    private CTransform transform;
+    private Vector2 startPosition;
+    private Vector2 targetPosition;
+
+
+    public ShiftToAction(Entity entity, Vector2 shiftAmount, float duration) {
         this.entity = entity;
-        this.speed = speed;
         this.shiftAmount = shiftAmount;
+        this.duration = duration > 0 ? duration : 0.0001f; // Avoid division by zero
         this.transform = (CTransform) entity.getComponent(CTransform.class);
     }
 
     @Override
     public boolean update(float delta) {
-        if (!initialized) {
-            // Calculate the target position on the first update
-            targetPosition = transform.m_position.cpy().add(shiftAmount);
-            initialized = true;
+        if (startPosition == null) {
+            // On the first frame, capture the start and calculate the final target position
+            startPosition = transform.m_position.cpy();
+            targetPosition = startPosition.cpy().add(shiftAmount);
         }
 
-        if (transform.m_position.equals(targetPosition)) {
-            return true; // Action is complete
-        }
+        elapsedTime += delta;
 
-        Vector2 direction = targetPosition.cpy().sub(transform.m_position).nor();
-        float distance = speed * delta;
+        // Calculate how far along the animation is (from 0.0 to 1.0)
+        float progress = Math.min(1f, elapsedTime / duration);
 
-        if (transform.m_position.dst(targetPosition) < distance) {
-            transform.m_position.set(targetPosition);
-            return true; // Arrived, action is complete
-        } else {
-            transform.m_position.mulAdd(direction, distance);
-            return false; // Still moving
-        }
+        // Linearly interpolate (lerp) the position
+        transform.m_position.set(startPosition).lerp(targetPosition, progress);
+
+        // The action is done when progress is 1.0 or more
+        return progress >= 1f;
     }
 }

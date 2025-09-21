@@ -46,11 +46,11 @@ public class Sequencer {
         Vector2 playerPosition = g.position.get("PLAYER" + (playerIndex + 1) + "_CARD");
         Vector2 firstCardPosition = playerPosition.cpy();
         // 1. Move the first card into position
-        Action moveFirstCard = new MoveToAction(firstCardEntity, firstCardPosition, 300f);
+        Action moveFirstCard = new MoveToAction(firstCardEntity, firstCardPosition, 5);
 
         // 2. Move the second card and shift the first card at the same time
-        Action moveSecondCard = new MoveToAction(secondCardEntity, firstCardPosition, 300f);
-        Action shiftFirstCard = new ShiftToAction(firstCardEntity, new Vector2(-5, 0), 50f);
+        Action moveSecondCard = new MoveToAction(secondCardEntity, firstCardPosition, 5);
+        Action shiftFirstCard = new ShiftToAction(firstCardEntity, new Vector2(-5, 0), 5);
 
         Action parallelMoveAndShift = new ParallelAction(moveSecondCard, shiftFirstCard);
 
