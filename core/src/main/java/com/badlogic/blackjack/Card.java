@@ -1,11 +1,14 @@
 package com.badlogic.blackjack;
 
 public class Card {
+    private static int nextId = 0;
+    public final int m_id;
     private final String m_rank;
     private final String m_suit;
     private int m_value;
 
     public Card(String rank, String suit) {
+        this.m_id = nextId++;
         this.m_rank = rank;
         this.m_suit = suit;
 

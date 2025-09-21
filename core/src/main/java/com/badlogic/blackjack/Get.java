@@ -17,14 +17,14 @@ public class Get {
         world_dimensions = new Vector2(320,180);
 
         position = new HashMap<>();
-        position.put("DECK", new Vector2(160,90));
-        position.put("PLAYER1_CARD", new Vector2(20,100));
-        position.put("PLAYER2_CARD", new Vector2(20,50));
-        position.put("PLAYER3_CARD", new Vector2(90,20));
-        position.put("PLAYER4_CARD", new Vector2(150,20));
-        position.put("PLAYER5_CARD", new Vector2(210,20));
-        position.put("PLAYER6_CARD", new Vector2(270,50));
-        position.put("PLAYER7_CARD", new Vector2(270,100));
+        position.put("DECK", new Vector2(172,106));
+        position.put("PLAYER1_CARD", new Vector2(32,116));
+        position.put("PLAYER2_CARD", new Vector2(32,66));
+        position.put("PLAYER3_CARD", new Vector2(102,36));
+        position.put("PLAYER4_CARD", new Vector2(162,36));
+        position.put("PLAYER5_CARD", new Vector2(222,36));
+        position.put("PLAYER6_CARD", new Vector2(282,66));
+        position.put("PLAYER7_CARD", new Vector2(282,116));
 
         rotation = new HashMap<>();
         rotation.put("PLAYER1", 90f);

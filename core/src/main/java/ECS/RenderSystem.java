@@ -18,9 +18,12 @@ public class RenderSystem {
                 Vector2 position = transformComponent.m_position;
                 Vector2 size = transformComponent.m_viewportSize;
 
-                sprite.setPosition(position.x, position.y);
-                sprite.setRotation(rotation);
                 sprite.setSize(size.x, size.y);
+                sprite.setOriginCenter();
+                sprite.setOriginBasedPosition(position.x, position.y);
+                sprite.setRotation(rotation);
+
+
 
                 sprite.draw(spriteBatch);
             }

@@ -2,11 +2,15 @@ package com.badlogic.blackjack;
 
 import com.badlogic.gdx.math.Vector2;
 
+import java.util.ArrayList;
+import java.util.List;
+
 enum GameState { STARTING, DEALING, PLAYER_TURN, ANIMATIONS_IN_PROGRESS }
 
 public class BlackjackLogic {
     private Sequencer sequencer;
     Deck deck;
+    List<Player> playersList;
     GameState gameState;
 
 
@@ -14,17 +18,37 @@ public class BlackjackLogic {
         this.sequencer = sequencer;
         this.deck = new Deck();
         gameState = GameState.STARTING;
+
+        playersList = new ArrayList<>();
+
+        Player p1 = new Player("Pedo", 100);
+        Player p2 = new Player("Pedo", 100);
+        Player p3 = new Player("Pedo", 100);
+
+        playersList.add(p1);
+        playersList.add(p2);
+        playersList.add(p3);
+        playersList.add(p1);
+        playersList.add(p2);
+        playersList.add(p3);
+        playersList.add(p3);
     }
 
     public void dealInitialCards() {
+
+        for (int i = 0; i < playersList.size(); i++) {
+            Player p = playersList.get(i);
+
+            p.addCard(deck.drawCard());
+            sequencer.DealCardToPlayer(p, i);
+            p.addCard(deck.drawCard());
+            sequencer.DealCardToPlayer(p, i);
+        }
+
         // USAGE:
         //  - GENERATE CARDS USING deck.drawCard()
         //  - DEAL CARD TO PLAYER USING sequencer.dealCardToPlayer()
-        sequencer.DealAllPlayersOrdered("PLAYER1_CARD",
-            "PLAYER2_CARD",
-            "PLAYER4_CARD",
-            "PLAYER6_CARD",
-            "PLAYER7_CARD");
+//        sequencer.DealAllPlayersOrdered("PLAYER4_CARD");
     }
 
     public void update(float delta) {

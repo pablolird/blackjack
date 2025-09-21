@@ -27,20 +27,32 @@ public class ECS {
     // This translates the game-specific request into generic ECS actions
     public void createBoardEntity(int width, int height) {
         Entity board = entityManager.createEntity("board");
-        board.addComponent(new CTransform(new Vector2(0, 0), new Vector2(width, height)));
+        board.addComponent(new CTransform(new Vector2(g.world_dimensions.x/2, g.world_dimensions.y/2), new Vector2(width, height)));
         board.addComponent(new CSprite(assets.board)); // Use the loaded board texture
     }
 
-    public Entity createCardEntity(String suit, String rank) {
+    public Entity createCardEntity(Card c) {
         Entity card = entityManager.createEntity("card");
         card.addComponent(new CTransform(new Vector2(g.world_dimensions.x/2, g.world_dimensions.y/2+50f),
                                          new Vector2(cardWidth, cardHeight)));
-        card.addComponent(new CSprite(assets.getCardSprite(suit,rank))); // Use the loaded board texture
-        card.addComponent(new CCard(suit, rank));
+        card.addComponent(new CSprite(assets.getCardSprite(c.getSuit(),c.getRank()))); // Use the loaded board texture
+        card.addComponent(new CCard(c.m_id, c.getSuit(), c.getRank()));
 
         return card;
     }
 
+    // You will also need a way to find an entity by its card ID
+    public Entity findCardEntity(int cardId) {
+        for (Entity e : entityManager.getEntities()) {
+            if (e.hasComponent(CCard.class)) {
+                CCard cCard = (CCard) e.getComponent(CCard.class);
+                if (cCard.m_id == cardId) {
+                    return e;
+                }
+            }
+        }
+        return null; // Or throw an exception if not found
+    }
 
     public void update(float delta) {
 

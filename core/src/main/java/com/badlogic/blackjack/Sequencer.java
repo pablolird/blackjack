@@ -1,24 +1,24 @@
 package com.badlogic.blackjack;
 
-import com.badlogic.blackjack.actions.Action;
+import com.badlogic.blackjack.actions.*;
 import ECS.Entity;
-import com.badlogic.blackjack.actions.MoveToAction;
-import com.badlogic.blackjack.actions.SequenceAction;
+import ECS.CTransform;
 import com.badlogic.gdx.math.Vector2;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class Sequencer {
     private Get g;
     private ECS ecs;
     private List<Action> actions = new ArrayList<>();
+    private HandLayoutManager handLayoutManager;
 
 
     public Sequencer(ECS ecs) {
         this.g = new Get();
         this.ecs = ecs;
+        this.handLayoutManager = new HandLayoutManager();
     }
 
     public void addAction(Action action) {
@@ -30,34 +30,38 @@ public class Sequencer {
         actions.removeIf(a -> a.update(delta));
     }
 
-    public void DealAllPlayersOrdered(String... players) {
-        SequenceAction s = new SequenceAction();
+    public void DealCardToPlayer(Player p, int playerIndex) {
+        List<Card> cards = p.m_currentCards;
+        if (cards.size() < 2) return; // Should have 2 cards to deal
 
-        for (String p : players) {
-            Action a = dealTwoCardsInOrder(p);
-            s.add(a);
-        }
+        // Get the first and second cards
+        Card firstCardObject = cards.get(0);
+        Card secondCardObject = cards.get(1);
 
-        this.addAction(s);
+        // Create entities for both cards
+        Entity firstCardEntity = ecs.createCardEntity(firstCardObject);
+        Entity secondCardEntity = ecs.createCardEntity(secondCardObject);
+
+        // Define player position and card offsets
+        Vector2 playerPosition = g.position.get("PLAYER" + (playerIndex + 1) + "_CARD");
+        Vector2 firstCardPosition = playerPosition.cpy();
+        // 1. Move the first card into position
+        Action moveFirstCard = new MoveToAction(firstCardEntity, firstCardPosition, 300f);
+
+        // 2. Move the second card and shift the first card at the same time
+        Action moveSecondCard = new MoveToAction(secondCardEntity, firstCardPosition, 300f);
+        Action shiftFirstCard = new ShiftToAction(firstCardEntity, new Vector2(-5, 0), 50f);
+
+        Action parallelMoveAndShift = new ParallelAction(moveSecondCard, shiftFirstCard);
+
+        Action inBetweenDelay = new DelayAction(1);
+
+        // 3. Create the final sequence
+        SequenceAction dealInitialCardsAction = new SequenceAction(moveFirstCard, inBetweenDelay, parallelMoveAndShift);
+
+        this.addAction(dealInitialCardsAction);
     }
 
-    // In Sequencer.java
-    private Action dealTwoCardsInOrder(String player) {
-        Entity card1 = ecs.createCardEntity("spades", "A");
-        Entity card2 = ecs.createCardEntity("hearts", "10");
-
-        Action move1 = new MoveToAction(card1, g.position.get(player), 300f);
-        Action move2 = new MoveToAction(card2, new Vector2(g.position.get(player)).add(5f, 5f), 300f);
-        // Create a single SequenceAction that will run move1, then move2.
-        return new SequenceAction(move1, move2);
-    }
-
-    public void dealCardToPlayer(Card card, Vector2 targetPosition) {
-        // Now, the Sequencer translates the command into ECS actions.
-        Entity cardEntity = ecs.createCardEntity(card.getSuit(), card.getRank());
-
-        addAction(new MoveToAction(cardEntity, targetPosition, 30f));
-    }
 
     public boolean isBusy() {
         return !actions.isEmpty();
