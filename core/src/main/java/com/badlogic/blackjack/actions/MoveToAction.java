@@ -12,12 +12,16 @@ public class MoveToAction implements Action {
 
     private CTransform transform;
     private Vector2 startPosition;
+    private float startRotation;
+    private float targetRotation;
 
-    public MoveToAction(Entity entity, Vector2 targetPosition, float duration) {
+    public MoveToAction(Entity entity, Vector2 targetPosition, float targetRotation ,float duration) {
         this.entity = entity;
         this.targetPosition = targetPosition;
+        this.targetRotation = targetRotation;
         this.duration = duration > 0 ? duration : 0.0001f; // Avoid division by zero
         this.transform = (CTransform) entity.getComponent(CTransform.class);
+        this.startRotation = transform.m_rotation;
     }
 
     @Override
@@ -34,6 +38,9 @@ public class MoveToAction implements Action {
 
         // Linearly interpolate (lerp) the position based on progress
         transform.m_position.set(startPosition).lerp(targetPosition, progress);
+
+        // Linearly interpolate (lerp) the rotation based on progress
+        transform.m_rotation = targetRotation * progress;
 
         // The action is done when progress is 1.0 or more
         return progress >= 1f;

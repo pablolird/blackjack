@@ -27,8 +27,8 @@ public class Get {
         position.put("PLAYER7_CARD", new Vector2(282,116));
 
         rotation = new HashMap<>();
-        rotation.put("PLAYER1", 90f);
-        rotation.put("PLAYER2", 90f);
+        rotation.put("PLAYER1", 270f);
+        rotation.put("PLAYER2", 270f);
         rotation.put("PLAYER3", 0f);
         rotation.put("PLAYER4", 0f);
         rotation.put("PLAYER5", 0f);
