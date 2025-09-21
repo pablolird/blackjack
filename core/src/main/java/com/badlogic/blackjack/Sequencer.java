@@ -30,9 +30,9 @@ public class Sequencer {
         actions.removeIf(a -> a.update(delta));
     }
 
-    public void DealCardToPlayer(Player p, int playerIndex) {
+    public SequenceAction DealCardToPlayer(Player p, int playerIndex) {
         List<Card> cards = p.m_currentCards;
-        if (cards.size() < 2) return; // Should have 2 cards to deal
+        if (cards.size() < 2) return null; // Should have 2 cards to deal
 
         // Get the first and second cards
         Card firstCardObject = cards.get(0);
@@ -46,18 +46,30 @@ public class Sequencer {
         Vector2 playerPosition = g.position.get("PLAYER" + (playerIndex + 1) + "_CARD");
         Vector2 firstCardPosition = playerPosition.cpy();
         // 1. Move the first card into position
-        Action moveFirstCard = new MoveToAction(firstCardEntity, firstCardPosition, 5);
+        Action moveFirstCard = new MoveToAction(firstCardEntity, firstCardPosition, 0.25f);
 
         // 2. Move the second card and shift the first card at the same time
-        Action moveSecondCard = new MoveToAction(secondCardEntity, firstCardPosition, 5);
-        Action shiftFirstCard = new ShiftToAction(firstCardEntity, new Vector2(-5, 0), 5);
+        Action moveSecondCard = new MoveToAction(secondCardEntity, firstCardPosition, 0.25f);
+        Action shiftFirstCard = new ShiftToAction(firstCardEntity, new Vector2(-5, 0), 0.25f);
 
         Action parallelMoveAndShift = new ParallelAction(moveSecondCard, shiftFirstCard);
 
-        Action inBetweenDelay = new DelayAction(1);
+        Action inBetweenDelay = new DelayAction(0.2f);
 
         // 3. Create the final sequence
         SequenceAction dealInitialCardsAction = new SequenceAction(moveFirstCard, inBetweenDelay, parallelMoveAndShift);
+
+        return dealInitialCardsAction;
+    }
+
+    public void DealInitialCards(List<Player> players) {
+
+        SequenceAction dealInitialCardsAction = new SequenceAction();
+
+        for(int i = 0; i < players.size(); i++)
+        {
+            dealInitialCardsAction.add(DealCardToPlayer(players.get(i), i));
+        }
 
         this.addAction(dealInitialCardsAction);
     }

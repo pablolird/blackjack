@@ -26,12 +26,12 @@ public class BlackjackLogic {
         Player p3 = new Player("Pedo", 100);
 
         playersList.add(p1);
-        playersList.add(p2);
-        playersList.add(p3);
         playersList.add(p1);
-        playersList.add(p2);
-        playersList.add(p3);
-        playersList.add(p3);
+        playersList.add(p1);
+        playersList.add(p1);
+        playersList.add(p1);
+        playersList.add(p1);
+        playersList.add(p1);
     }
 
     public void dealInitialCards() {
@@ -40,10 +40,12 @@ public class BlackjackLogic {
             Player p = playersList.get(i);
 
             p.addCard(deck.drawCard());
-            sequencer.DealCardToPlayer(p, i);
             p.addCard(deck.drawCard());
-            sequencer.DealCardToPlayer(p, i);
         }
+
+        sequencer.DealInitialCards(playersList);
+
+
 
         // USAGE:
         //  - GENERATE CARDS USING deck.drawCard()
