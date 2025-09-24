@@ -12,10 +12,12 @@ public class BlackjackLogic {
     Deck deck;
     List<Player> playersList;
     GameState gameState;
+    UI gameUI;
 
 
-    public BlackjackLogic(Sequencer sequencer) {
+    public BlackjackLogic(Sequencer sequencer, UI gameUI) {
         this.sequencer = sequencer;
+        this.gameUI = gameUI;
         this.deck = new Deck();
         gameState = GameState.STARTING;
 
@@ -24,14 +26,18 @@ public class BlackjackLogic {
         Player p1 = new Player("Pedo", 100);
         Player p2 = new Player("Pedo", 100);
         Player p3 = new Player("Pedo", 100);
+        Player p4 = new Player("Pedo", 100);
+        Player p5 = new Player("Pedo", 100);
+        Player p6 = new Player("Pedo", 100);
+        Player p7 = new Player("Pedo", 100);
 
         playersList.add(p1);
-        playersList.add(p1);
-        playersList.add(p1);
-        playersList.add(p1);
-        playersList.add(p1);
-        playersList.add(p1);
-        playersList.add(p1);
+        playersList.add(p2);
+        playersList.add(p3);
+        playersList.add(p4);
+        playersList.add(p5);
+        playersList.add(p6);
+        playersList.add(p7);
     }
 
     public void dealInitialCards() {
@@ -59,6 +65,7 @@ public class BlackjackLogic {
                 gameState = GameState.DEALING;
                 break;
             case DEALING:
+                gameUI.showPlayerActionPanel(false);
 
                 this.dealInitialCards();
 
@@ -71,6 +78,7 @@ public class BlackjackLogic {
                 break;
             case PLAYER_TURN:
 
+                gameUI.showPlayerActionPanel(true);
                 break;
         }
     }

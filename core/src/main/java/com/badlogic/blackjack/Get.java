@@ -19,22 +19,22 @@ public class Get {
 
         position = new HashMap<>();
         position.put("DECK", new Vector2(172,106));
-        position.put("PLAYER1_CARD", new Vector2(32,116));
-        position.put("PLAYER2_CARD", new Vector2(32,66));
-        position.put("PLAYER3_CARD", new Vector2(102,36));
-        position.put("PLAYER4_CARD", new Vector2(162,36));
-        position.put("PLAYER5_CARD", new Vector2(222,36));
-        position.put("PLAYER6_CARD", new Vector2(282,66));
-        position.put("PLAYER7_CARD", new Vector2(282,116));
+        position.put("PLAYER1_CARD", new Vector2(53,142));
+        position.put("PLAYER2_CARD", new Vector2(86,125));
+        position.put("PLAYER3_CARD", new Vector2(120,110));
+        position.put("PLAYER4_CARD", new Vector2(160,103));
+        position.put("PLAYER5_CARD", new Vector2(200,109));
+        position.put("PLAYER6_CARD", new Vector2(233,126));
+        position.put("PLAYER7_CARD", new Vector2(267,142));
 
         rotation = new HashMap<>();
-        rotation.put("PLAYER1", 270f);
-        rotation.put("PLAYER2", 270f);
-        rotation.put("PLAYER3", 0f);
-        rotation.put("PLAYER4", 0f);
-        rotation.put("PLAYER5", 0f);
-        rotation.put("PLAYER6", 270f);
-        rotation.put("PLAYER7", 270f);
+        rotation.put("PLAYER1", 330f);
+        rotation.put("PLAYER2", 330f);
+        rotation.put("PLAYER3", 330f);
+        rotation.put("PLAYER4", 180f);
+        rotation.put("PLAYER5", 210f);
+        rotation.put("PLAYER6", 210f);
+        rotation.put("PLAYER7", 210f);
 
         shift = new HashMap<>();
         shift.put("PLAYER1", new Vector2(0,-5));

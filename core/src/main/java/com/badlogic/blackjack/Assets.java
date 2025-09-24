@@ -22,8 +22,13 @@ public class Assets {
     }
 
     public void loadFromFile() {
-        board = new Texture(Gdx.files.internal("board.png"));
+        board = new Texture(Gdx.files.internal("board2.png"));
+        // Set the filter for the board texture
+        board.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+
         Texture cardSheet = new Texture(Gdx.files.internal("cardSheet.png"));
+        // Set the filter for the card sheet texture
+        cardSheet.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
 
         cardRegions = TextureRegion.split(cardSheet, cardWidth, cardHeight);
 

@@ -12,8 +12,8 @@ public class ECS {
     private Assets assets; // Store the assets manager
 
     // HARD-CODED VALUES THAT SHOULD MAYBE BELONG SOMEWHERE ELSE:
-    private float cardWidth = 24;
-    private float cardHeight = 32;
+    private float cardWidth = 18;
+    private float cardHeight = 24;
 
     // Constructor now accepts Assets
     public ECS(Assets assets) {
