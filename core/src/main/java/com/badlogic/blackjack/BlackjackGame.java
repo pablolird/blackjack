@@ -1,34 +1,37 @@
 package com.badlogic.blackjack;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class BlackjackGame {
-    private FitViewport gameViewport;
-    private Viewport uiViewport;
-    private SpriteBatch spriteBatch;
-    private ECS ecs;
-    private Sequencer sequencer;
-    private BlackjackLogic logic;
-    private UI ui;
-    private Assets assets; // Add an instance of Assets
+    private final FitViewport gameViewport;
+    private final Viewport uiViewport;
+    private final SpriteBatch spriteBatch;
+    private final ECS ecs;
+    private final Sequencer sequencer;
+    private final BlackjackLogic logic;
+    private final UI ui;
 
 
     public BlackjackGame(int width, int height) {
         gameViewport = new FitViewport(width, height);
-        uiViewport = new ScreenViewport(); // ScreenViewport uses screen pixels
+        uiViewport = new FitViewport(960,540); // ScreenViewport uses screen pixels
         spriteBatch = new SpriteBatch();
-        ui = new UI(uiViewport, spriteBatch);
 
-        assets = new Assets(); // Create and load assets
+        // Add an instance of Assets
+        Assets assets = new Assets(); // Create and load assets
         assets.loadFromFile();
 
         ecs = new ECS(assets);
         sequencer = new Sequencer(ecs);
-        logic = new BlackjackLogic(sequencer, ui);
+        logic = new BlackjackLogic(sequencer);
+        ui = new UI(uiViewport, spriteBatch, logic);
+
+        logic.setGameUI(ui);
 
         ecs.createBoardEntity(width,height);
     }
@@ -56,8 +59,6 @@ public class BlackjackGame {
         spriteBatch.begin();
         ecs.render(spriteBatch);
         spriteBatch.end();
-
-        uiViewport.apply();
         ui.render();
     }
 

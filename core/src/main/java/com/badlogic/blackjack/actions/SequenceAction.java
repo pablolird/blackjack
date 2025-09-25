@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class SequenceAction implements Action {
-    private List<Action> actions;
+    private final List<Action> actions;
 
     public SequenceAction(Action... actions) {
         // Takes a set of action parameters and converts it to an array

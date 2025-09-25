@@ -2,23 +2,22 @@ package com.badlogic.blackjack;
 
 import com.badlogic.blackjack.actions.*;
 import ECS.Entity;
-import ECS.CTransform;
 import com.badlogic.gdx.math.Vector2;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Sequencer {
-    private Get g;
-    private ECS ecs;
-    private List<Action> actions = new ArrayList<>();
-    private HandLayoutManager handLayoutManager;
+    private final Get g;
+    private final ECS ecs;
+    private final List<Action> actions = new ArrayList<>();
+    //private HandLayoutManager handLayoutManager;
 
 
     public Sequencer(ECS ecs) {
         this.g = new Get();
         this.ecs = ecs;
-        this.handLayoutManager = new HandLayoutManager();
+        //this.handLayoutManager = new HandLayoutManager();
     }
 
     public void addAction(Action action) {
@@ -30,9 +29,62 @@ public class Sequencer {
         actions.removeIf(a -> a.update(delta));
     }
 
+    /**
+     * Creates a single, parallel action that animates a player receiving their newest card.
+     * It finds all of the player's existing card entities and creates actions to shift them,
+     * while the new card (which was just created) is animated from the deck to its final position.
+     *
+     * @param p The Player receiving the card.
+     * @param playerIndex The index of the player (for positioning).
+     * @return A ParallelAction containing all the necessary animations.
+     */
+    // MODIFICATIONS TO MAKE:
+    //  - MAKE CARDS CENTERED WITH RESPECT TO PLAYER DECK POSITION
+    public void createDealCardAction(Player p, int playerIndex) {
+        List<Card> cards = p.m_currentCards;
+        if (cards.isEmpty()) {
+            return; // Cannot deal a card if the hand is empty.
+        }
+
+        // The newest card is the last one in the list.
+        Card newCardObject = cards.get(cards.size() - 1);
+        Entity newCardEntity = ecs.findCardEntity(newCardObject.m_id);
+
+        // If the entity for the new card doesn't exist yet, create it.
+        if (newCardEntity == null) {
+            newCardEntity = ecs.createCardEntity(newCardObject);
+        }
+
+        // This action will hold all shifting and moving animations so they run at the same time.
+        ParallelAction parallelAction = new ParallelAction();
+
+        // Get the specific shift vector for this player position.
+        Vector2 shiftAmount = g.shift.get("PLAYER" + (playerIndex + 1));
+
+        // 1. Create ShiftToAction for all existing cards (from index 0 to n-2).
+        for (int i = 0; i < cards.size() - 1; i++) {
+            Card existingCard = cards.get(i);
+            Entity existingEntity = ecs.findCardEntity(existingCard.m_id);
+
+            if (existingEntity != null) {
+                Action shiftAction = new ShiftToAction(existingEntity, shiftAmount, 0.25f);
+                parallelAction.add(shiftAction);
+            }
+        }
+
+        // 2. Create a MoveToAction for the new card.
+        // The target position is the base position for that player's hand.
+        Vector2 playerPosition = g.position.get("PLAYER" + (playerIndex + 1) + "_CARD");
+        float playerRotation = g.rotation.get("PLAYER" + (playerIndex + 1));
+
+        Action moveAction = new MoveToAction(newCardEntity, playerPosition.cpy(), playerRotation, 0.25f);
+        parallelAction.add(moveAction);
+
+        this.actions.add(parallelAction);
+    }
+
     public SequenceAction DealCardToPlayer(Player p, int playerIndex) {
         List<Card> cards = p.m_currentCards;
-        if (cards.size() < 2) return null; // Should have 2 cards to deal
 
         // Get the first and second cards
         Card firstCardObject = cards.get(0);
@@ -57,9 +109,7 @@ public class Sequencer {
         Action inBetweenDelay = new DelayAction(0.2f);
 
         // 3. Create the final sequence
-        SequenceAction dealInitialCardsAction = new SequenceAction(moveFirstCard, inBetweenDelay, parallelMoveAndShift);
-
-        return dealInitialCardsAction;
+        return new SequenceAction(moveFirstCard, inBetweenDelay, parallelMoveAndShift);
     }
 
     public void DealInitialCards(List<Player> players) {

@@ -6,14 +6,14 @@ import ECS.*;
 
 
 public class ECS {
-    private Get g;
-    private EntityManager entityManager;
-    private RenderSystem renderSystem;
-    private Assets assets; // Store the assets manager
+    private final Get g;
+    private final EntityManager entityManager;
+    private final RenderSystem renderSystem;
+    private final Assets assets; // Store the assets manager
 
     // HARD-CODED VALUES THAT SHOULD MAYBE BELONG SOMEWHERE ELSE:
-    private float cardWidth = 18;
-    private float cardHeight = 24;
+    private float cardWidth = 54;
+    private float cardHeight = 72;
 
     // Constructor now accepts Assets
     public ECS(Assets assets) {
@@ -33,7 +33,7 @@ public class ECS {
 
     public Entity createCardEntity(Card c) {
         Entity card = entityManager.createEntity("card");
-        card.addComponent(new CTransform(new Vector2(g.world_dimensions.x/2, g.world_dimensions.y/2+50f),
+        card.addComponent(new CTransform(new Vector2(g.world_dimensions.x/2, g.world_dimensions.y/2+150f),
                                          new Vector2(cardWidth, cardHeight)));
         card.addComponent(new CSprite(assets.getCardSprite(c.getSuit(),c.getRank()))); // Use the loaded board texture
         card.addComponent(new CCard(c.m_id, c.getSuit(), c.getRank()));

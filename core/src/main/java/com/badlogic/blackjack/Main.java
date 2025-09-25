@@ -5,8 +5,8 @@
 
     /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
     public class Main implements ApplicationListener {
-        public static final int WORLD_WIDTH = 320;
-        public static final int WORLD_HEIGHT = 180;
+        public static final int WORLD_WIDTH = 960;
+        public static final int WORLD_HEIGHT = 540;
         private BlackjackGame game;
 
         @Override

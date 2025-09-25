@@ -5,18 +5,16 @@ import ECS.Entity;
 import com.badlogic.gdx.math.Vector2;
 
 public class ShiftToAction implements Action {
-    private final Entity entity;
     private final Vector2 shiftAmount;
     private final float duration;
     private float elapsedTime = 0f;
 
-    private CTransform transform;
+    private final CTransform transform;
     private Vector2 startPosition;
     private Vector2 targetPosition;
 
 
     public ShiftToAction(Entity entity, Vector2 shiftAmount, float duration) {
-        this.entity = entity;
         this.shiftAmount = shiftAmount;
         this.duration = duration > 0 ? duration : 0.0001f; // Avoid division by zero
         this.transform = (CTransform) entity.getComponent(CTransform.class);

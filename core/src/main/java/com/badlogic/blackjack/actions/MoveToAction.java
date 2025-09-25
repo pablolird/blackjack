@@ -5,23 +5,20 @@ import ECS.Entity;
 import com.badlogic.gdx.math.Vector2;
 
 public class MoveToAction implements Action {
-    private final Entity entity;
     private final Vector2 targetPosition;
     private final float duration;
     private float elapsedTime = 0f;
 
-    private CTransform transform;
+    private final CTransform transform;
     private Vector2 startPosition;
-    private float startRotation;
-    private float targetRotation;
+    private final float targetRotation;
 
     public MoveToAction(Entity entity, Vector2 targetPosition, float targetRotation ,float duration) {
-        this.entity = entity;
         this.targetPosition = targetPosition;
         this.targetRotation = targetRotation;
         this.duration = duration > 0 ? duration : 0.0001f; // Avoid division by zero
         this.transform = (CTransform) entity.getComponent(CTransform.class);
-        this.startRotation = transform.m_rotation;
+        float startRotation = transform.m_rotation;
     }
 
     @Override

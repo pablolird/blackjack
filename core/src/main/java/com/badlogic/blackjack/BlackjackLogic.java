@@ -1,35 +1,31 @@
 package com.badlogic.blackjack;
-
-import com.badlogic.gdx.math.Vector2;
-
 import java.util.ArrayList;
 import java.util.List;
 
 enum GameState { STARTING, DEALING, PLAYER_TURN, ANIMATIONS_IN_PROGRESS }
 
 public class BlackjackLogic {
-    private Sequencer sequencer;
+    private final Sequencer sequencer;
     Deck deck;
     List<Player> playersList;
     GameState gameState;
     UI gameUI;
 
 
-    public BlackjackLogic(Sequencer sequencer, UI gameUI) {
+    public BlackjackLogic(Sequencer sequencer) {
         this.sequencer = sequencer;
-        this.gameUI = gameUI;
         this.deck = new Deck();
         gameState = GameState.STARTING;
 
         playersList = new ArrayList<>();
 
-        Player p1 = new Player("Pedo", 100);
-        Player p2 = new Player("Pedo", 100);
-        Player p3 = new Player("Pedo", 100);
-        Player p4 = new Player("Pedo", 100);
-        Player p5 = new Player("Pedo", 100);
-        Player p6 = new Player("Pedo", 100);
-        Player p7 = new Player("Pedo", 100);
+        Player p1 = new Player("Pablo", 100);
+        Player p2 = new Player("Pedro", 100);
+        Player p3 = new Player("Sebas", 100);
+        Player p4 = new Player("Carlos", 100);
+        Player p5 = new Player("Damn", 100);
+        Player p6 = new Player("Lol", 100);
+        Player p7 = new Player("XD", 100);
 
         playersList.add(p1);
         playersList.add(p2);
@@ -40,23 +36,33 @@ public class BlackjackLogic {
         playersList.add(p7);
     }
 
+    public void setGameUI(UI ui) {
+        this.gameUI = ui;
+    }
+
     public void dealInitialCards() {
-
-        for (int i = 0; i < playersList.size(); i++) {
-            Player p = playersList.get(i);
-
+        // EVENTUALLY CHANGE THIS, I DON'T LIKE HOW DEALINITIALCARDS() WORKS, WAY TOO SPECIFIC AND HARDCODED
+        for (Player p : playersList) {
             p.addCard(deck.drawCard());
+            gameUI.updatePlayerScore(p);
             p.addCard(deck.drawCard());
+            gameUI.updatePlayerScore(p);
         }
 
         sequencer.DealInitialCards(playersList);
+    }
 
+    public void dealNewCard() {
+        if (!gameState.equals(GameState.PLAYER_TURN) || sequencer.isBusy()) {
+            return;
+        }
 
-
-        // USAGE:
-        //  - GENERATE CARDS USING deck.drawCard()
-        //  - DEAL CARD TO PLAYER USING sequencer.dealCardToPlayer()
-//        sequencer.DealAllPlayersOrdered("PLAYER4_CARD");
+        for (int i = 0; i < playersList.size(); i++) {
+            Player p = playersList.get(i);
+            p.addCard(deck.drawCard());
+            sequencer.createDealCardAction(p,i);
+            gameUI.updatePlayerScore(p);
+        }
     }
 
     public void update(float delta) {
@@ -77,8 +83,9 @@ public class BlackjackLogic {
                 }
                 break;
             case PLAYER_TURN:
-
-                gameUI.showPlayerActionPanel(true);
+                if (!gameUI.ActionPanelIsVisible()) {
+                    gameUI.showPlayerActionPanel(true);
+                }
                 break;
         }
     }

@@ -15,17 +15,17 @@ public class Get {
     Vector2 world_dimensions;
 
     public Get() {
-        world_dimensions = new Vector2(320,180);
+        world_dimensions = new Vector2(960, 540);
 
         position = new HashMap<>();
-        position.put("DECK", new Vector2(172,106));
-        position.put("PLAYER1_CARD", new Vector2(53,142));
-        position.put("PLAYER2_CARD", new Vector2(86,125));
-        position.put("PLAYER3_CARD", new Vector2(120,110));
-        position.put("PLAYER4_CARD", new Vector2(160,103));
-        position.put("PLAYER5_CARD", new Vector2(200,109));
-        position.put("PLAYER6_CARD", new Vector2(233,126));
-        position.put("PLAYER7_CARD", new Vector2(267,142));
+        position.put("DECK", new Vector2(516, 318));
+        position.put("PLAYER1_CARD", new Vector2(159, 426));
+        position.put("PLAYER2_CARD", new Vector2(258, 375));
+        position.put("PLAYER3_CARD", new Vector2(360, 330));
+        position.put("PLAYER4_CARD", new Vector2(480, 309));
+        position.put("PLAYER5_CARD", new Vector2(600, 327));
+        position.put("PLAYER6_CARD", new Vector2(699, 378));
+        position.put("PLAYER7_CARD", new Vector2(801, 426));
 
         rotation = new HashMap<>();
         rotation.put("PLAYER1", 330f);
@@ -37,13 +37,12 @@ public class Get {
         rotation.put("PLAYER7", 210f);
 
         shift = new HashMap<>();
-        shift.put("PLAYER1", new Vector2(0,-5));
-        shift.put("PLAYER2", new Vector2(0,-5));
-        shift.put("PLAYER3", new Vector2(-5,0));
-        shift.put("PLAYER4", new Vector2(-5,0));
-        shift.put("PLAYER5", new Vector2(-5,0));
-        shift.put("PLAYER6", new Vector2(0,-5));
-        shift.put("PLAYER7", new Vector2(0,-5));
+        shift.put("PLAYER1", new Vector2(0, -15));
+        shift.put("PLAYER2", new Vector2(0, -15));
+        shift.put("PLAYER3", new Vector2(-15, 0));
+        shift.put("PLAYER4", new Vector2(-15, 0));
+        shift.put("PLAYER5", new Vector2(-15, 0));
+        shift.put("PLAYER6", new Vector2(0, -15));
+        shift.put("PLAYER7", new Vector2(0, -15));
     }
-
 }

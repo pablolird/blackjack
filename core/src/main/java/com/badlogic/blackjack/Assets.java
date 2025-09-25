@@ -12,8 +12,8 @@ public class Assets {
     public TextureRegion[][] cardRegions; // grid of cards
     public Map<String, Sprite> cardMap;
     public Texture board;
-    public int cardWidth = 48;
-    public int cardHeight = 64;
+    public int cardWidth;
+    public int cardHeight;
 
     public Assets() {}
 
@@ -22,11 +22,13 @@ public class Assets {
     }
 
     public void loadFromFile() {
-        board = new Texture(Gdx.files.internal("board2.png"));
+        board = new Texture(Gdx.files.internal("board1.png"));
         // Set the filter for the board texture
         board.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
 
-        Texture cardSheet = new Texture(Gdx.files.internal("cardSheet.png"));
+        Texture cardSheet = new Texture(Gdx.files.internal("cardSheet-big.png"));
+        cardWidth = cardSheet.getWidth()/13;
+        cardHeight = cardSheet.getHeight()/4;
         // Set the filter for the card sheet texture
         cardSheet.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
 
