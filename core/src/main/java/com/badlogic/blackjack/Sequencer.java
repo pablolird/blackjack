@@ -41,6 +41,7 @@ public class Sequencer {
     // MODIFICATIONS TO MAKE:
     //  - MAKE CARDS CENTERED WITH RESPECT TO PLAYER DECK POSITION
     public void createDealCardAction(Player p, int playerIndex) {
+        float duration = 0.25f;
         List<Card> cards = p.m_currentCards;
         if (cards.isEmpty()) {
             return; // Cannot deal a card if the hand is empty.
@@ -67,7 +68,7 @@ public class Sequencer {
             Entity existingEntity = ecs.findCardEntity(existingCard.m_id);
 
             if (existingEntity != null) {
-                Action shiftAction = new ShiftToAction(existingEntity, shiftAmount, 0.25f);
+                Action shiftAction = new ShiftToAction(existingEntity, shiftAmount, duration);
                 parallelAction.add(shiftAction);
             }
         }
@@ -77,13 +78,14 @@ public class Sequencer {
         Vector2 playerPosition = g.position.get("PLAYER" + (playerIndex + 1) + "_CARD");
         float playerRotation = g.rotation.get("PLAYER" + (playerIndex + 1));
 
-        Action moveAction = new MoveToAction(newCardEntity, playerPosition.cpy(), playerRotation, 0.25f);
+        Action moveAction = new MoveToAction(newCardEntity, playerPosition.cpy(), playerRotation, duration);
         parallelAction.add(moveAction);
 
         this.actions.add(parallelAction);
     }
 
     public SequenceAction DealCardToPlayer(Player p, int playerIndex) {
+        float duration = 3f;
         List<Card> cards = p.m_currentCards;
 
         // Get the first and second cards
@@ -98,15 +100,15 @@ public class Sequencer {
         Vector2 playerPosition = g.position.get("PLAYER" + (playerIndex + 1) + "_CARD");
         Vector2 firstCardPosition = playerPosition.cpy();
         // 1. Move the first card into position
-        Action moveFirstCard = new MoveToAction(firstCardEntity, firstCardPosition, g.rotation.get("PLAYER" + (playerIndex + 1)) ,0.25f);
+        Action moveFirstCard = new MoveToAction(firstCardEntity, firstCardPosition, g.rotation.get("PLAYER" + (playerIndex + 1)) ,duration);
 
         // 2. Move the second card and shift the first card at the same time
-        Action moveSecondCard = new MoveToAction(secondCardEntity, firstCardPosition, g.rotation.get("PLAYER" + (playerIndex + 1)) ,0.25f);
-        Action shiftFirstCard = new ShiftToAction(firstCardEntity, g.shift.get("PLAYER" + (playerIndex + 1)), 0.25f);
+        Action moveSecondCard = new MoveToAction(secondCardEntity, firstCardPosition, g.rotation.get("PLAYER" + (playerIndex + 1)) ,duration);
+        Action shiftFirstCard = new ShiftToAction(firstCardEntity, g.shift.get("PLAYER" + (playerIndex + 1)), duration);
 
         Action parallelMoveAndShift = new ParallelAction(moveSecondCard, shiftFirstCard);
 
-        Action inBetweenDelay = new DelayAction(0.2f);
+        Action inBetweenDelay = new DelayAction(duration);
 
         // 3. Create the final sequence
         return new SequenceAction(moveFirstCard, inBetweenDelay, parallelMoveAndShift);

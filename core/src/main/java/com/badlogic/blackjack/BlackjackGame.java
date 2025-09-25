@@ -32,7 +32,6 @@ public class BlackjackGame {
         ui = new UI(uiViewport, spriteBatch, logic);
 
         logic.setGameUI(ui);
-
         ecs.createBoardEntity(width,height);
     }
 

@@ -2,10 +2,11 @@ package com.badlogic.blackjack;
 import java.util.ArrayList;
 import java.util.List;
 
-enum GameState { STARTING, DEALING, PLAYER_TURN, ANIMATIONS_IN_PROGRESS }
+enum GameState { STARTING, DEALING, PLAYER_TURN, ANIMATIONS_IN_PROGRESS, DEALER_TURN }
 
 public class BlackjackLogic {
     private final Sequencer sequencer;
+    int current_playerIndex;
     Deck deck;
     List<Player> playersList;
     GameState gameState;
@@ -34,34 +35,74 @@ public class BlackjackLogic {
         playersList.add(p5);
         playersList.add(p6);
         playersList.add(p7);
+
+        this.current_playerIndex = 0;
     }
+
+    public void nextPlayer() {
+        // SHOULD ONLY BE USED FOR HIT/STAND
+        if (current_playerIndex==playersList.size()-1) {
+            // LAST PLAYER PRESSED STAND, GO TO NEXT GAME PHASE
+            gameState = GameState.DEALER_TURN;
+            gameUI.showPlayerActionPanel(false);
+        }
+        current_playerIndex=(current_playerIndex+1)%playersList.size();
+        gameUI.updateCurrentPlayerColor(playersList.get(current_playerIndex));
+    }
+
 
     public void setGameUI(UI ui) {
         this.gameUI = ui;
     }
 
-    public void dealInitialCards() {
-        // EVENTUALLY CHANGE THIS, I DON'T LIKE HOW DEALINITIALCARDS() WORKS, WAY TOO SPECIFIC AND HARDCODED
-        for (Player p : playersList) {
-            p.addCard(deck.drawCard());
-            gameUI.updatePlayerScore(p);
-            p.addCard(deck.drawCard());
-            gameUI.updatePlayerScore(p);
-        }
-
-        sequencer.DealInitialCards(playersList);
+    public void stand() {
+        nextPlayer();
     }
 
-    public void dealNewCard() {
+    public void dealInitialCards() {
+        if (current_playerIndex == playersList.size()) {
+            current_playerIndex=0;
+            gameState = GameState.ANIMATIONS_IN_PROGRESS;
+            return;
+        }
+
+        Player curentPlayer = playersList.get(current_playerIndex);
+        if (sequencer.isBusy()) {
+            gameUI.updatePlayerScore(playersList.get(current_playerIndex));
+
+            if (curentPlayer.m_currentCards.size() > 1 ) {
+                // CONSIDER USING MODULAR ARITHMETIC IF POSSIBLE AT SOME MOMENT
+                current_playerIndex++;
+            }
+            return;
+        }
+
+        curentPlayer.addCard(deck.drawCard());
+        sequencer.createDealCardAction(curentPlayer, current_playerIndex);
+
+//        // EVENTUALLY CHANGE THIS, I DON'T LIKE HOW DEALINITIALCARDS() WORKS, WAY TOO SPECIFIC AND HARDCODED
+//        for (Player p : playersList) {
+//            p.addCard(deck.drawCard());
+//            gameUI.updatePlayerScore(p);
+//            p.addCard(deck.drawCard());
+//            gameUI.updatePlayerScore(p);
+//        }
+//
+//        sequencer.DealInitialCards(playersList);
+    }
+
+    public void hit() {
         if (!gameState.equals(GameState.PLAYER_TURN) || sequencer.isBusy()) {
             return;
         }
 
-        for (int i = 0; i < playersList.size(); i++) {
-            Player p = playersList.get(i);
-            p.addCard(deck.drawCard());
-            sequencer.createDealCardAction(p,i);
-            gameUI.updatePlayerScore(p);
+        Player p = playersList.get(current_playerIndex);
+        p.addCard(deck.drawCard());
+        sequencer.createDealCardAction(p,current_playerIndex);
+        gameUI.updatePlayerScore(p);
+
+        if (p.totalValue()>21) {
+            nextPlayer();
         }
     }
 
@@ -75,7 +116,7 @@ public class BlackjackLogic {
 
                 this.dealInitialCards();
 
-                gameState = GameState.ANIMATIONS_IN_PROGRESS;
+//                gameState = GameState.ANIMATIONS_IN_PROGRESS;
                 break;
             case ANIMATIONS_IN_PROGRESS:
                 if (!sequencer.isBusy()) {
@@ -85,7 +126,10 @@ public class BlackjackLogic {
             case PLAYER_TURN:
                 if (!gameUI.ActionPanelIsVisible()) {
                     gameUI.showPlayerActionPanel(true);
+                    gameUI.setCurrentPlayer(playersList.get(current_playerIndex));
                 }
+                break;
+            case DEALER_TURN:
                 break;
         }
     }

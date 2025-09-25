@@ -1,6 +1,7 @@
 package com.badlogic.blackjack;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
@@ -25,6 +26,7 @@ public class UI {
     private boolean paused;
     private final Get g;
     private SpriteBatch spriteBatch;
+    Player currentPlayer;
 
 
     public UI(Viewport vp, SpriteBatch sb, BlackjackLogic bl) {
@@ -50,17 +52,14 @@ public class UI {
         hitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                System.out.println("Hit was pressed!");
-
-                blackjackLogic.dealNewCard();
+                blackjackLogic.hit();
             }
         });
 
         standButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                System.out.println("Stand was pressed!");
-
+                blackjackLogic.stand();
             }
         });
 
@@ -117,6 +116,16 @@ public class UI {
 
     public void render() {
         stage.draw();
+    }
+
+    public void updateCurrentPlayerColor(Player p) {
+        playerScoreLabels.get(currentPlayer).setColor(Color.WHITE);
+        setCurrentPlayer(p);
+    }
+
+    public void setCurrentPlayer(Player p) {
+        currentPlayer = p;
+        playerScoreLabels.get(currentPlayer).setColor(Color.BLUE);
     }
 
     public void resize(int width, int height) {
