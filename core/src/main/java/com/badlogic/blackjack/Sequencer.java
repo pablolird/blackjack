@@ -2,9 +2,9 @@ package com.badlogic.blackjack;
 
 import com.badlogic.blackjack.actions.*;
 import ECS.Entity;
-import com.badlogic.gdx.Audio;
+import com.badlogic.blackjack.audio.AudioManager;
+import com.badlogic.blackjack.audio.SoundType;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.blackjack.actions.PlaySFXAction;
 
 import java.util.ArrayList;
@@ -87,7 +87,7 @@ public class Sequencer {
         Action moveAction = new MoveToAction(newCardEntity, playerPosition.cpy(), playerRotation, duration);
         parallelAction.add(moveAction);
 
-        Action playCardSound = new PlaySFXAction(audioManager, assets.dealCardSFX, 0.9f);
+        Action playCardSound = new PlaySFXAction(audioManager, SoundType.CARD_DEAL, 0.95f);
         parallelAction.add(playCardSound);
 
         this.actions.add(parallelAction);

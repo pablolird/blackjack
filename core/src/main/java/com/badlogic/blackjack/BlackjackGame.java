@@ -1,12 +1,10 @@
 package com.badlogic.blackjack;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.badlogic.blackjack.AudioManager;
+import com.badlogic.blackjack.audio.AudioManager;
 
 public class BlackjackGame {
     private final FitViewport gameViewport;

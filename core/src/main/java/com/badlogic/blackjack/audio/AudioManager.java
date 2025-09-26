@@ -1,8 +1,10 @@
-package com.badlogic.blackjack;
+package com.badlogic.blackjack.audio;
 
-import com.badlogic.gdx.Audio;
+import com.badlogic.blackjack.Assets;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
+import java.util.Map;
+import java.util.HashMap;
 
 public class AudioManager
 {
@@ -10,15 +12,24 @@ public class AudioManager
     private float masterSoundVolume = 1.0f;
     private float masterMusicVolume = 1.0f;
     private Music currentMusic;
+    private final Map<SoundType, Sound> soundMap;
 
     public AudioManager(Assets assets)
     {
         this.assets = assets;
+        soundMap = new HashMap<>();
+        soundMap.put(SoundType.CARD_DEAL, assets.dealCardSFX);
+        // soundMap.put(SoundType.BUTTON_CLICK, assets.clickSFX);
     }
 
-    public void playSound(Sound sound, float volume)
+    public void playSound(SoundType type, float volume)
     {
-        sound.play(this.masterSoundVolume * volume);
+        Sound soundToPlay = soundMap.get(type);
+        if (soundToPlay != null)
+        {
+            soundToPlay.play(masterSoundVolume * volume);
+        }
+
     }
 
     public void playMusic(Music music, float volume)
