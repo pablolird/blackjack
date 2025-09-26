@@ -22,9 +22,9 @@ public class Assets {
     }
 
     public void loadFromFile() {
-        board = new Texture(Gdx.files.internal("board1.png"));
+        board = new Texture(Gdx.files.internal("temp-board.png"));
         // Set the filter for the board texture
-        board.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+//        board.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
 
         Texture cardSheet = new Texture(Gdx.files.internal("cardSheet-big.png"));
         cardWidth = cardSheet.getWidth()/13;

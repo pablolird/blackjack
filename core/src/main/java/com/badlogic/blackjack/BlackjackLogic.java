@@ -79,16 +79,6 @@ public class BlackjackLogic {
 
         curentPlayer.addCard(deck.drawCard());
         sequencer.createDealCardAction(curentPlayer, current_playerIndex);
-
-//        // EVENTUALLY CHANGE THIS, I DON'T LIKE HOW DEALINITIALCARDS() WORKS, WAY TOO SPECIFIC AND HARDCODED
-//        for (Player p : playersList) {
-//            p.addCard(deck.drawCard());
-//            gameUI.updatePlayerScore(p);
-//            p.addCard(deck.drawCard());
-//            gameUI.updatePlayerScore(p);
-//        }
-//
-//        sequencer.DealInitialCards(playersList);
     }
 
     public void hit() {
@@ -113,10 +103,7 @@ public class BlackjackLogic {
                 break;
             case DEALING:
                 gameUI.showPlayerActionPanel(false);
-
                 this.dealInitialCards();
-
-//                gameState = GameState.ANIMATIONS_IN_PROGRESS;
                 break;
             case ANIMATIONS_IN_PROGRESS:
                 if (!sequencer.isBusy()) {
