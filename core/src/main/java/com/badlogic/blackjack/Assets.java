@@ -4,6 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,6 +16,9 @@ public class Assets {
     public Texture board;
     public int cardWidth;
     public int cardHeight;
+
+    public Sound dealCardSFX;
+    public Music bgMusic1;
 
     public Assets() {}
 
@@ -44,5 +49,8 @@ public class Assets {
                 cardMap.put(ranks[rank] + "_of_" + suits[suit], new Sprite(cardRegions[suit][rank]));
             }
         }
+        dealCardSFX = Gdx.audio.newSound(Gdx.files.internal("cardSlide2AMPx.mp3"));
+        bgMusic1 = Gdx.audio.newMusic(Gdx.files.internal("SongOption3.ogg"));
+
     }
 }

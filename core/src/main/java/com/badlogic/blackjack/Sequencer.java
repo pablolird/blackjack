@@ -2,7 +2,10 @@ package com.badlogic.blackjack;
 
 import com.badlogic.blackjack.actions.*;
 import ECS.Entity;
+import com.badlogic.gdx.Audio;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.audio.Sound;
+import com.badlogic.blackjack.actions.PlaySFXAction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,11 +15,14 @@ public class Sequencer {
     private final ECS ecs;
     private final List<Action> actions = new ArrayList<>();
     //private HandLayoutManager handLayoutManager;
+    private AudioManager audioManager;
+    private Assets assets;
 
-
-    public Sequencer(ECS ecs) {
+    public Sequencer(ECS ecs, AudioManager audioManager, Assets assets) {
         this.g = new Get();
         this.ecs = ecs;
+        this.audioManager = audioManager;
+        this.assets = assets;
         //this.handLayoutManager = new HandLayoutManager();
     }
 
@@ -80,6 +86,9 @@ public class Sequencer {
 
         Action moveAction = new MoveToAction(newCardEntity, playerPosition.cpy(), playerRotation, duration);
         parallelAction.add(moveAction);
+
+        Action playCardSound = new PlaySFXAction(audioManager, assets.dealCardSFX, 0.9f);
+        parallelAction.add(playCardSound);
 
         this.actions.add(parallelAction);
     }

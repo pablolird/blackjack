@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.badlogic.blackjack.AudioManager;
 
 public class BlackjackGame {
     private final FitViewport gameViewport;
@@ -15,7 +16,8 @@ public class BlackjackGame {
     private final Sequencer sequencer;
     private final BlackjackLogic logic;
     private final UI ui;
-
+    private final Assets assets;
+    private final AudioManager audioManager;
 
     public BlackjackGame(int width, int height) {
         gameViewport = new FitViewport(width, height);
@@ -23,16 +25,19 @@ public class BlackjackGame {
         spriteBatch = new SpriteBatch();
 
         // Add an instance of Assets
-        Assets assets = new Assets(); // Create and load assets
+        assets = new Assets(); // Create and load assets
         assets.loadFromFile();
 
+        audioManager = new AudioManager(assets);
+
         ecs = new ECS(assets);
-        sequencer = new Sequencer(ecs);
+        sequencer = new Sequencer(ecs, audioManager, assets);
         logic = new BlackjackLogic(sequencer);
         ui = new UI(uiViewport, spriteBatch, logic);
 
         logic.setGameUI(ui);
         ecs.createBoardEntity(width,height);
+        audioManager.playMusic(assets.bgMusic1, 0.3f);
     }
 
     public void update(float delta) {
