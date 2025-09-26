@@ -31,11 +31,11 @@ public class Assets {
         // Set the filter for the board texture
 //        board.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
 
-        Texture cardSheet = new Texture(Gdx.files.internal("cardSheet-big.png"));
+        Texture cardSheet = new Texture(Gdx.files.internal("TRUEminicards.png"));
         cardWidth = cardSheet.getWidth()/13;
         cardHeight = cardSheet.getHeight()/4;
         // Set the filter for the card sheet texture
-        cardSheet.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        cardSheet.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
 
         cardRegions = TextureRegion.split(cardSheet, cardWidth, cardHeight);
 
@@ -49,8 +49,8 @@ public class Assets {
                 cardMap.put(ranks[rank] + "_of_" + suits[suit], new Sprite(cardRegions[suit][rank]));
             }
         }
+
         dealCardSFX = Gdx.audio.newSound(Gdx.files.internal("cardSlide2AMPx.mp3"));
         bgMusic1 = Gdx.audio.newMusic(Gdx.files.internal("SongOption3.ogg"));
-
     }
 }

@@ -29,7 +29,7 @@ public class BlackjackGame {
         audioManager = new AudioManager(assets);
 
         ecs = new ECS(assets);
-        sequencer = new Sequencer(ecs, audioManager, assets);
+        sequencer = new Sequencer(ecs, audioManager);
         logic = new BlackjackLogic(sequencer);
         ui = new UI(uiViewport, spriteBatch, logic);
 

@@ -16,13 +16,11 @@ public class Sequencer {
     private final List<Action> actions = new ArrayList<>();
     //private HandLayoutManager handLayoutManager;
     private AudioManager audioManager;
-    private Assets assets;
 
-    public Sequencer(ECS ecs, AudioManager audioManager, Assets assets) {
+    public Sequencer(ECS ecs, AudioManager audioManager) {
         this.g = new Get();
         this.ecs = ecs;
         this.audioManager = audioManager;
-        this.assets = assets;
         //this.handLayoutManager = new HandLayoutManager();
     }
 
