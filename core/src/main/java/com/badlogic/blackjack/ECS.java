@@ -31,7 +31,7 @@ public class ECS {
     public Entity createCardEntity(Card c) {
         Entity card = entityManager.createEntity("card");
         Vector2 cardSize = new Vector2(assets.cardWidth * CARD_SCALE, assets.cardHeight * CARD_SCALE);
-        card.addComponent(new CTransform(new Vector2(g.world_dimensions.x/2, g.world_dimensions.y/2+150f), cardSize));
+        card.addComponent(new CTransform(new Vector2(g.position.get("DECK")), cardSize));
         card.addComponent(new CSprite(assets.getCardSprite(c.getSuit(),c.getRank()))); // Use the loaded board texture
         card.addComponent(new CCard(c.m_id, c.getSuit(), c.getRank()));
 

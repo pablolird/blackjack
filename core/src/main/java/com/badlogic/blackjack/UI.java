@@ -95,7 +95,9 @@ public class UI {
             if (position != null) {
                 // Set the position of the label directly!
                 // You might need to adjust these coordinates to place the score *near* the cards.
-                scoreLabel.setPosition(position.x - scoreLabel.getWidth() / 2f, position.y - 150 - scoreLabel.getHeight() / 2f); // Example: 20 pixels below the card position
+                scoreLabel.setPosition(position.x - (scoreLabel.getWidth() / 2f) + g.scoreShift.get("PLAYER"+(i+1)).x,
+                                       position.y - (scoreLabel.getHeight() / 2f) + g.scoreShift.get("PLAYER"+(i+1)).y);
+                                        // Example: 20 pixels below the card position
             }
 
             playerScoreLabels.put(p, scoreLabel);
