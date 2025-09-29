@@ -20,6 +20,7 @@ public class UI {
     private final Stage stage;
     private final Skin skin;
     private final Table playerActionTable;
+    private final Table bettingActionTable;
     private final Window pauseMenu;
     private final Map<Player, Label> playerScoreLabels;
     private final Map<Player, Label> playerBalanceLabels;
@@ -43,7 +44,7 @@ public class UI {
 
         Gdx.input.setInputProcessor(stage);
 
-        // 2. Build the Player Action Panel (initially hidden)
+        // 1. Build the Player Action Panel (initially hidden)
         playerActionTable = new Table();
         playerActionTable.setFillParent(true);
         playerActionTable.bottom(); // Anchor to the bottom
@@ -70,6 +71,51 @@ public class UI {
         playerActionTable.add(standButton).pad(10);
         playerActionTable.setVisible(false); // Hide it by default
 
+        // 2. Build the Betting Action Panel
+        bettingActionTable = new Table();
+        bettingActionTable.setFillParent(true);
+        bettingActionTable.bottom();
+        stage.addActor(bettingActionTable);
+
+        TextButton bet10Button = new TextButton("Bet 10", skin);
+        TextButton bet50Button = new TextButton("Bet 50", skin);
+        TextButton bet100Button = new TextButton("Bet 100", skin);
+        TextButton confirmBetButton = new TextButton("Confirm Bet", skin);
+
+        bet10Button.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                blackjackLogic.playerAddToBet(10);
+            }
+        });
+
+        bet50Button.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                blackjackLogic.playerAddToBet(50);
+            }
+        });
+
+        bet100Button.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                blackjackLogic.playerAddToBet(100);
+            }
+        });
+
+        confirmBetButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                blackjackLogic.playerLockInBet();
+            }
+        });
+
+        bettingActionTable.add(bet10Button).pad(10);
+        bettingActionTable.add(bet50Button).pad(10);
+        bettingActionTable.add(bet100Button).pad(10);
+        bettingActionTable.add(confirmBetButton).pad(10);
+        bettingActionTable.setVisible(false);
+
         // 3. Build the Pause Menu (initially hidden)
         pauseMenu = new Window("Pause", skin);
         TextButton quitButton = new TextButton("Leave Room", skin);
@@ -88,7 +134,7 @@ public class UI {
         dealerScoreLabel = new Label("Dealer: 0", skin);
         dealerScoreLabel.scaleBy(-0.5f);
         dealerScoreLabel.setAlignment(Align.left);
-        dealerScoreLabel.setColor(255/255f, 250/255f, 180/255f, 1);
+        dealerScoreLabel.setColor(255/255f, 230/255f, 156/255f, 1);
         Vector2 dealerPosition = g.position.get("DEALER_CARD");
         Vector2 dealerShift = g.scoreShift.get("DEALER");
         dealerScoreLabel.setPosition(dealerPosition.x - (dealerScoreLabel.getWidth() / 2f) + dealerShift.x,
@@ -165,14 +211,19 @@ public class UI {
         stage.draw();
     }
 
-    public void updateCurrentPlayerColor(Player p) {
-        playerScoreLabels.get(currentPlayer).setColor(128/255f, 128/255f, 128/255f, 0.75f);
+    public void updateCurrentPlayerColor(Player p)
+    {
+        if (!(currentPlayer == null)) {
+            playerScoreLabels.get(currentPlayer).setColor(128 / 255f, 128 / 255f, 128 / 255f, 0.75f);
+        }
         setCurrentPlayer(p);
     }
 
     public void setCurrentPlayer(Player p) {
         currentPlayer = p;
-        playerScoreLabels.get(currentPlayer).setColor(Color.WHITE);
+        if(!(currentPlayer == null)) {
+            playerScoreLabels.get(currentPlayer).setColor(Color.WHITE);
+        }
     }
 
     public void resize(int width, int height) {
@@ -185,6 +236,10 @@ public class UI {
 
     public void showPlayerActionPanel(boolean visible) {
         playerActionTable.setVisible(visible);
+    }
+
+    public void showBettingPanel(boolean visible) {
+        bettingActionTable.setVisible(visible);
     }
 
     public boolean ActionPanelIsVisible() {

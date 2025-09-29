@@ -21,9 +21,22 @@ public class Player extends Dealer {
         return m_balance;
     }
 
-    public void setBet(int bet) {
-        this.m_currentBet = bet;
-        this.m_balance -= bet;
+    public void lockInBet()
+    {
+        this.m_balance -= this.m_currentBet;
+    }
+
+    public void addToBet(int amount)
+    {
+        if (this.m_currentBet + amount <= this.m_balance)
+        {
+            this.m_currentBet += amount;
+        }
+    }
+
+    public int getCurrentBet()
+    {
+        return m_currentBet;
     }
 
     public void addBalance(double multiplier) {

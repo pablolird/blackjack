@@ -2,7 +2,7 @@ package com.badlogic.blackjack;
 import java.util.ArrayList;
 import java.util.List;
 
-enum GameState { STARTING, DEALING_DEALER, DEALING_PLAYERS, PLAYER_TURN, ANIMATIONS_IN_PROGRESS, DEALER_TURN }
+enum GameState { STARTING, BETTING, DEALING_DEALER, DEALING_PLAYERS, PLAYER_TURN, ANIMATIONS_IN_PROGRESS, DEALER_TURN }
 
 public class BlackjackLogic {
     private final Sequencer sequencer;
@@ -61,6 +61,34 @@ public class BlackjackLogic {
         nextPlayer();
     }
 
+    public void playerAddToBet(int amount)
+    {
+        Player currentPlayer = playersList.get(current_playerIndex);
+        currentPlayer.addToBet(amount);
+        gameUI.updatePlayerBalance(currentPlayer); // Update UI to show new potential bet
+    }
+
+    public void playerLockInBet() {
+        Player currentPlayer = playersList.get(current_playerIndex);
+        if (currentPlayer.getCurrentBet() > 0) {
+            currentPlayer.lockInBet();
+            gameUI.updatePlayerBalance(currentPlayer);
+            if (current_playerIndex < playersList.size() - 1)
+            {
+                Player nextPlayer = playersList.get(current_playerIndex + 1);
+                gameUI.updateCurrentPlayerColor(nextPlayer);
+                current_playerIndex++;
+            }
+            else
+            {
+                current_playerIndex = 0;
+                gameState = GameState.DEALING_DEALER;
+                gameUI.showBettingPanel(false);
+                gameUI.updateCurrentPlayerColor(null);
+            }
+        }
+    }
+
     public void dealInitialCards() {
         if (current_playerIndex == playersList.size()) {
             current_playerIndex=0;
@@ -101,7 +129,11 @@ public class BlackjackLogic {
     public void update(float delta) {
         switch (gameState) {
             case STARTING:
-                gameState = GameState.DEALING_DEALER;
+                gameState = GameState.BETTING;
+                gameUI.showBettingPanel(true);
+                gameUI.setCurrentPlayer(playersList.get(current_playerIndex));
+                break;
+            case BETTING:
                 break;
             case DEALING_DEALER:
                 if(!sequencer.isBusy())
