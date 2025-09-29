@@ -24,8 +24,8 @@ public class BlackjackLogic {
         Player p2 = new Player("Pedro", 100);
         Player p3 = new Player("Sebas", 100);
         Player p4 = new Player("Carlos", 100);
-        Player p5 = new Player("Damn", 100);
-        Player p6 = new Player("Lol", 100);
+        Player p5 = new Player("Alvaro", 100);
+        Player p6 = new Player("Ale", 100);
         Player p7 = new Player("XD", 100);
 
         playersList.add(p1);

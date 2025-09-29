@@ -22,6 +22,7 @@ public class UI {
     private final Table playerActionTable;
     private final Window pauseMenu;
     private final Map<Player, Label> playerScoreLabels;
+    private final Map<Player, Label> playerBalanceLabels;
     private final BlackjackLogic blackjackLogic;
     private boolean paused;
     private final Get g;
@@ -34,6 +35,7 @@ public class UI {
         this.g = new Get();
         this.paused = false;
         playerScoreLabels = new HashMap<>();
+        playerBalanceLabels = new HashMap<>();
 
         stage = new Stage(vp, sb);
         skin = new Skin(Gdx.files.internal("skin/x1/uiskin.json"));
@@ -88,20 +90,35 @@ public class UI {
             scoreLabel.setAlignment(Align.left);
 
             // Get the specific coordinates from your Get class
-            // This assumes your Get class has positions for player scores
-            String playerKey = "PLAYER" + (i + 1) + "_CARD"; // Or a new key like PLAYER_SCORE_POS
+            Label balanceLabel = new Label(p.getBalance() + "c", skin);
+            balanceLabel.scaleBy(-0.5f);
+            balanceLabel.setAlignment(Align.left);
+
+            String playerKey = "PLAYER" + (i + 1) + "_CARD";
             Vector2 position = g.position.get(playerKey);
 
             if (position != null) {
-                // Set the position of the label directly!
-                // You might need to adjust these coordinates to place the score *near* the cards.
                 scoreLabel.setPosition(position.x - (scoreLabel.getWidth() / 2f) + g.scoreShift.get("PLAYER"+(i+1)).x,
-                                       position.y - (scoreLabel.getHeight() / 2f) + g.scoreShift.get("PLAYER"+(i+1)).y);
-                                        // Example: 20 pixels below the card position
+                    position.y - (scoreLabel.getHeight() / 2f) + g.scoreShift.get("PLAYER"+(i+1)).y);
+
+                float yOffset;
+                if (i == 0 || i == 6)
+                {
+                    yOffset = 25; // Player 1 and 7 offset (on top of name)
+                } else
+                {
+                    yOffset = -25; // Other player offset (below name)
+                }
+
+                balanceLabel.setPosition(position.x - (balanceLabel.getWidth() / 2f) + g.scoreShift.get("PLAYER"+(i+1)).x,
+                    position.y - (balanceLabel.getHeight() / 2f) + g.scoreShift.get("PLAYER"+(i+1)).y + yOffset);
+
             }
 
             playerScoreLabels.put(p, scoreLabel);
             stage.addActor(scoreLabel); // Add the label directly to the stage
+            playerBalanceLabels.put(p, balanceLabel);
+            stage.addActor(balanceLabel);
         }
     }
 
@@ -109,6 +126,13 @@ public class UI {
         Label scoreLabel = playerScoreLabels.get(p);
         if (scoreLabel != null) {
             scoreLabel.setText(p.getName() + ": " + p.totalValue());
+        }
+    }
+
+    public void updatePlayerBalance(Player p) {
+        Label balanceLabel = playerBalanceLabels.get(p);
+        if (balanceLabel != null) {
+            balanceLabel.setText(p.getBalance() + "c");
         }
     }
 
