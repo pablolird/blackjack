@@ -19,7 +19,7 @@ public class AudioManager
         this.assets = assets;
         soundMap = new HashMap<>();
         soundMap.put(SoundType.CARD_DEAL, assets.dealCardSFX);
-        // soundMap.put(SoundType.BUTTON_CLICK, assets.clickSFX);
+        soundMap.put(SoundType.BET, assets.betSFX);
     }
 
     public void playSound(SoundType type, float volume)

@@ -31,7 +31,7 @@ public class BlackjackGame {
         ecs = new ECS(assets);
         sequencer = new Sequencer(ecs, audioManager);
         logic = new BlackjackLogic(sequencer);
-        ui = new UI(uiViewport, spriteBatch, logic);
+        ui = new UI(uiViewport, spriteBatch, logic, audioManager);
 
         logic.setGameUI(ui);
         ecs.createBoardEntity(width,height);

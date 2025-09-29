@@ -1,5 +1,7 @@
 package com.badlogic.blackjack;
 
+import com.badlogic.blackjack.audio.AudioManager;
+import com.badlogic.blackjack.audio.SoundType;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -26,18 +28,20 @@ public class UI {
     private final Map<Player, Label> playerBalanceLabels;
     private final BlackjackLogic blackjackLogic;
     private boolean paused;
+    private AudioManager audioManager;
     private final Get g;
     private Label dealerScoreLabel;
     private SpriteBatch spriteBatch;
     Player currentPlayer;
 
 
-    public UI(Viewport vp, SpriteBatch sb, BlackjackLogic bl) {
+    public UI(Viewport vp, SpriteBatch sb, BlackjackLogic bl, AudioManager audioManager) {
         this.blackjackLogic = bl;
         this.g = new Get();
         this.paused = false;
         playerScoreLabels = new HashMap<>();
         playerBalanceLabels = new HashMap<>();
+        this.audioManager = audioManager;
 
         stage = new Stage(vp, sb);
         skin = new Skin(Gdx.files.internal("skin/x1/uiskin.json"));
@@ -86,6 +90,7 @@ public class UI {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 blackjackLogic.playerAddToBet(10);
+                audioManager.playSound(SoundType.BET, 1.0f);
             }
         });
 
@@ -93,6 +98,7 @@ public class UI {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 blackjackLogic.playerAddToBet(50);
+                audioManager.playSound(SoundType.BET, 1.0f);
             }
         });
 
@@ -100,6 +106,7 @@ public class UI {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 blackjackLogic.playerAddToBet(100);
+                audioManager.playSound(SoundType.BET, 1.0f);
             }
         });
 
