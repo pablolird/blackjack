@@ -20,6 +20,7 @@ public class Get {
 
         position = new HashMap<>();
         position.put("DECK", new Vector2(480, 270));
+        position.put("DEALER_CARD", new Vector2(480, 330));
         position.put("PLAYER1_CARD", new Vector2(360, 330));
         position.put("PLAYER2_CARD", new Vector2(258, 280));
         position.put("PLAYER3_CARD", new Vector2(360, 210));
@@ -30,7 +31,7 @@ public class Get {
 
 
         scoreShift = new HashMap<>();
-        scoreShift.put("DEALER",       new Vector2(0, 70));
+        scoreShift.put("DEALER",  new Vector2(0, 70));
         scoreShift.put("PLAYER1", new Vector2(0, 70));
         scoreShift.put("PLAYER2", new Vector2(-140, 0));
         scoreShift.put("PLAYER3", new Vector2(0, -70));
@@ -40,6 +41,7 @@ public class Get {
         scoreShift.put("PLAYER7", new Vector2(0, 70));
 
         rotation = new HashMap<>();
+        rotation.put("DEALER", 0f);
         rotation.put("PLAYER1", 180f);
         rotation.put("PLAYER2", 90f);
         rotation.put("PLAYER3", 180f);
@@ -49,6 +51,7 @@ public class Get {
         rotation.put("PLAYER7", 180f);
 
         shift = new HashMap<>();
+        shift.put("DEALER",  new Vector2(-15, 0));
         shift.put("PLAYER1", new Vector2(-15, 0));
         shift.put("PLAYER2", new Vector2(0, -15));
         shift.put("PLAYER3", new Vector2(-15, 0));

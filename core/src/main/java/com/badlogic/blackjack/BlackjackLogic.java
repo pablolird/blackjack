@@ -2,12 +2,13 @@ package com.badlogic.blackjack;
 import java.util.ArrayList;
 import java.util.List;
 
-enum GameState { STARTING, DEALING, PLAYER_TURN, ANIMATIONS_IN_PROGRESS, DEALER_TURN }
+enum GameState { STARTING, DEALING_DEALER, DEALING_PLAYERS, PLAYER_TURN, ANIMATIONS_IN_PROGRESS, DEALER_TURN }
 
 public class BlackjackLogic {
     private final Sequencer sequencer;
     int current_playerIndex;
     Deck deck;
+    Dealer dealer;
     List<Player> playersList;
     GameState gameState;
     UI gameUI;
@@ -16,6 +17,7 @@ public class BlackjackLogic {
     public BlackjackLogic(Sequencer sequencer) {
         this.sequencer = sequencer;
         this.deck = new Deck();
+        this.dealer = new Dealer();
         gameState = GameState.STARTING;
 
         playersList = new ArrayList<>();
@@ -99,9 +101,18 @@ public class BlackjackLogic {
     public void update(float delta) {
         switch (gameState) {
             case STARTING:
-                gameState = GameState.DEALING;
+                gameState = GameState.DEALING_DEALER;
                 break;
-            case DEALING:
+            case DEALING_DEALER:
+                if(!sequencer.isBusy())
+                {
+                    dealer.addCard(deck.drawCard());
+                    sequencer.createDealCardToDealerAction(dealer);
+                    gameUI.updateDealerScore(dealer);
+                    gameState = GameState.DEALING_PLAYERS;
+                }
+                break;
+            case DEALING_PLAYERS:
                 gameUI.showPlayerActionPanel(false);
                 this.dealInitialCards();
                 break;
@@ -117,6 +128,16 @@ public class BlackjackLogic {
                 }
                 break;
             case DEALER_TURN:
+                if(!sequencer.isBusy())
+                {
+                    if(dealer.totalValue() < 17)
+                    {
+                        dealer.addCard(deck.drawCard());
+                        sequencer.createDealCardToDealerAction(dealer);
+                        gameUI.updateDealerScore(dealer);
+                    }
+                    break;
+                }
                 break;
         }
     }

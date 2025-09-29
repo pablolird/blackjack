@@ -33,6 +33,45 @@ public class Sequencer {
         actions.removeIf(a -> a.update(delta));
     }
 
+    public void createDealCardToDealerAction(Dealer dealer) {
+        float duration = 0.25f;
+        List<Card> cards = dealer.m_currentCards;
+        if (cards.isEmpty()) {
+            return;
+        }
+
+        Card newCardObject = cards.get(cards.size() - 1);
+        Entity newCardEntity = ecs.findCardEntity(newCardObject.m_id);
+
+        if (newCardEntity == null) {
+            newCardEntity = ecs.createCardEntity(newCardObject);
+        }
+
+        ParallelAction parallelAction = new ParallelAction();
+        Vector2 shiftAmount = g.shift.get("DEALER");
+
+        for (int i = 0; i < cards.size() - 1; i++) {
+            Card existingCard = cards.get(i);
+            Entity existingEntity = ecs.findCardEntity(existingCard.m_id);
+
+            if (existingEntity != null) {
+                Action shiftAction = new ShiftToAction(existingEntity, shiftAmount, duration);
+                parallelAction.add(shiftAction);
+            }
+        }
+
+        Vector2 dealerPosition = g.position.get("DEALER_CARD");
+        float dealerRotation = g.rotation.get("DEALER");
+
+        Action moveAction = new MoveToAction(newCardEntity, dealerPosition.cpy(), dealerRotation, duration);
+        parallelAction.add(moveAction);
+
+        Action playCardSound = new PlaySFXAction(audioManager, SoundType.CARD_DEAL, 0.95f);
+        parallelAction.add(playCardSound);
+
+        this.actions.add(parallelAction);
+    }
+
     /**
      * Creates a single, parallel action that animates a player receiving their newest card.
      * It finds all of the player's existing card entities and creates actions to shift them,

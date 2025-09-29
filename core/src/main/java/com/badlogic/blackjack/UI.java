@@ -26,6 +26,7 @@ public class UI {
     private final BlackjackLogic blackjackLogic;
     private boolean paused;
     private final Get g;
+    private Label dealerScoreLabel;
     private SpriteBatch spriteBatch;
     Player currentPlayer;
 
@@ -83,16 +84,30 @@ public class UI {
 
     // This method now places labels at specific coordinates
     public void buildLayout(List<Player> players) {
+        // DEALER
+        dealerScoreLabel = new Label("Dealer: 0", skin);
+        dealerScoreLabel.scaleBy(-0.5f);
+        dealerScoreLabel.setAlignment(Align.left);
+        dealerScoreLabel.setColor(255/255f, 250/255f, 180/255f, 1);
+        Vector2 dealerPosition = g.position.get("DEALER_CARD");
+        Vector2 dealerShift = g.scoreShift.get("DEALER");
+        dealerScoreLabel.setPosition(dealerPosition.x - (dealerScoreLabel.getWidth() / 2f) + dealerShift.x,
+            dealerPosition.y - (dealerScoreLabel.getHeight() / 2f) + dealerShift.y);
+        stage.addActor(dealerScoreLabel);
+
+        // PLAYERS
         for (int i = 0; i < players.size(); i++) {
             Player p = players.get(i);
             Label scoreLabel = new Label(p.getName() + ": 0", skin);
             scoreLabel.scaleBy(-0.5f);
             scoreLabel.setAlignment(Align.left);
+            scoreLabel.setColor(128/255f, 128/255f, 128/255f, 0.75f);
 
             // Get the specific coordinates from your Get class
             Label balanceLabel = new Label(p.getBalance() + "c", skin);
             balanceLabel.scaleBy(-0.5f);
             balanceLabel.setAlignment(Align.left);
+            balanceLabel.setColor(Color.YELLOW);
 
             String playerKey = "PLAYER" + (i + 1) + "_CARD";
             Vector2 position = g.position.get(playerKey);
@@ -129,6 +144,12 @@ public class UI {
         }
     }
 
+    public void updateDealerScore(Dealer dealer) {
+        if (dealerScoreLabel != null) {
+            dealerScoreLabel.setText("Dealer: " + dealer.totalValue());
+        }
+    }
+
     public void updatePlayerBalance(Player p) {
         Label balanceLabel = playerBalanceLabels.get(p);
         if (balanceLabel != null) {
@@ -145,13 +166,13 @@ public class UI {
     }
 
     public void updateCurrentPlayerColor(Player p) {
-        playerScoreLabels.get(currentPlayer).setColor(Color.WHITE);
+        playerScoreLabels.get(currentPlayer).setColor(128/255f, 128/255f, 128/255f, 0.75f);
         setCurrentPlayer(p);
     }
 
     public void setCurrentPlayer(Player p) {
         currentPlayer = p;
-        playerScoreLabels.get(currentPlayer).setColor(Color.BLUE);
+        playerScoreLabels.get(currentPlayer).setColor(Color.WHITE);
     }
 
     public void resize(int width, int height) {
