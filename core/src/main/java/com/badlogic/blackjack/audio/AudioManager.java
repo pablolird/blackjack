@@ -20,6 +20,7 @@ public class AudioManager
         soundMap = new HashMap<>();
         soundMap.put(SoundType.CARD_DEAL, assets.dealCardSFX);
         soundMap.put(SoundType.BET, assets.betSFX);
+        soundMap.put(SoundType.LOCKBET, assets.lockbetSFX);
     }
 
     public void playSound(SoundType type, float volume)

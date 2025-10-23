@@ -2,7 +2,7 @@ package com.badlogic.blackjack;
 import java.util.ArrayList;
 import java.util.List;
 
-enum GameState { STARTING, BETTING, DEALING_DEALER, DEALING_PLAYERS, PLAYER_TURN, ANIMATIONS_IN_PROGRESS, DEALER_TURN }
+enum GameState { STARTING, BETTING, DEALING_DEALER, DEALING_PLAYERS, PLAYER_TURN, ANIMATIONS_IN_PROGRESS, DEALER_TURN, RESOLVING_BETS }
 
 public class BlackjackLogic {
     private final Sequencer sequencer;
@@ -89,6 +89,62 @@ public class BlackjackLogic {
         }
     }
 
+    public void resolveBets()
+    {
+        int dealerTotal = dealer.totalValue();
+        boolean busted = (dealerTotal > 21);
+
+        for (Player p : playersList)
+        {
+            if (p.getCurrentBet() > 0)
+            {
+                int playerTotal = p.totalValue();
+                double multiplier = 0.0;
+
+                if (playerTotal > 21)
+                {
+                    // Player bust
+                    multiplier = 0.0; // Money was already removed in betting phase due to how balance is implemented now
+                }
+                else if (playerTotal == 21 && p.m_currentCards.size() == 2)
+                {
+                    // Player blackjack
+                    multiplier = 2.5;
+                }
+                else if (busted)
+                {
+                    // Dealer busted
+                    multiplier = 2.0;
+                }
+                else if (playerTotal > dealerTotal)
+                {
+                    // Player Win
+                    multiplier = 2.0;
+                }
+                else if (playerTotal == dealerTotal)
+                {
+                    // Tie
+                    multiplier = 1.0;
+                } else
+                {
+                    // Player Loss
+                    multiplier = 0.0;
+                }
+
+                p.addBalance(multiplier);
+                gameUI.updatePlayerBalance(p);
+            }
+
+            p.reset(); // LOW LEVEL ONLY
+            gameUI.updatePlayerScore(p);
+        }
+
+        dealer.reset(); // LOW LEVEL ONLY
+        gameUI.updateDealerScore(dealer);
+        gameUI.showPlayerActionPanel(false);
+        // gameState = GameState.STARTING;
+    }
+
     public void dealInitialCards() {
         if (current_playerIndex == playersList.size()) {
             current_playerIndex=0;
@@ -154,7 +210,8 @@ public class BlackjackLogic {
                 }
                 break;
             case PLAYER_TURN:
-                if (!gameUI.ActionPanelIsVisible()) {
+                if (!gameUI.ActionPanelIsVisible())
+                {
                     gameUI.showPlayerActionPanel(true);
                     gameUI.setCurrentPlayer(playersList.get(current_playerIndex));
                 }
@@ -168,8 +225,14 @@ public class BlackjackLogic {
                         sequencer.createDealCardToDealerAction(dealer);
                         gameUI.updateDealerScore(dealer);
                     }
-                    break;
+                    else
+                    {
+                        gameState = GameState.RESOLVING_BETS;
+                    }
                 }
+                break;
+            case RESOLVING_BETS:
+                resolveBets();
                 break;
         }
     }

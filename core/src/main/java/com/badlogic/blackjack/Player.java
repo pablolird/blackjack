@@ -23,13 +23,14 @@ public class Player extends Dealer {
 
     public void lockInBet()
     {
-        this.m_balance -= this.m_currentBet;
+        // Deprecated :(
     }
 
     public void addToBet(int amount)
     {
-        if (this.m_currentBet + amount <= this.m_balance)
+        if (this.m_balance >= amount)
         {
+            this.m_balance -= amount;
             this.m_currentBet += amount;
         }
     }
@@ -53,7 +54,8 @@ public class Player extends Dealer {
 
 
 
-    public void reset() {
+    public void reset()
+    {
         this.m_currentCards.clear();
         this.m_currentBet = 0;
         this.m_active = true;

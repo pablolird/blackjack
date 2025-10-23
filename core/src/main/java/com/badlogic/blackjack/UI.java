@@ -114,6 +114,7 @@ public class UI {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 blackjackLogic.playerLockInBet();
+                audioManager.playSound(SoundType.LOCKBET, 0.65f);
             }
         });
 

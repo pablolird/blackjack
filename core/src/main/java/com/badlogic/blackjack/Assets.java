@@ -19,6 +19,7 @@ public class Assets {
 
     public Sound dealCardSFX;
     public Sound betSFX;
+    public Sound lockbetSFX;
     public Music bgMusic1;
 
     public Assets() {}
@@ -53,6 +54,7 @@ public class Assets {
 
         dealCardSFX = Gdx.audio.newSound(Gdx.files.internal("cardSlide2AMPx.mp3"));
         betSFX = Gdx.audio.newSound(Gdx.files.internal("betSFX.mp3"));
+        lockbetSFX = Gdx.audio.newSound(Gdx.files.internal("lock.wav"));
         bgMusic1 = Gdx.audio.newMusic(Gdx.files.internal("SongOption3.ogg"));
     }
 }
