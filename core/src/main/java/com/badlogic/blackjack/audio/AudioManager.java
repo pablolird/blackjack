@@ -21,6 +21,7 @@ public class AudioManager
         soundMap.put(SoundType.CARD_DEAL, assets.dealCardSFX);
         soundMap.put(SoundType.BET, assets.betSFX);
         soundMap.put(SoundType.LOCKBET, assets.lockbetSFX);
+        soundMap.put(SoundType.STAND, assets.standSFX);
     }
 
     public void playSound(SoundType type, float volume)
