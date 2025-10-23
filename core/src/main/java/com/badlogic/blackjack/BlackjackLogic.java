@@ -124,7 +124,10 @@ public class BlackjackLogic {
                     multiplier = 0.0;
                 }
 
-                p.addBalance(multiplier);
+                int rawReturn = (int) (multiplier * p.getCurrentBet());
+                int roundedReturn = (rawReturn / 10) * 10;
+
+                p.addBalance(roundedReturn);
                 gameUI.updatePlayerBalance(p);
             }
             gameUI.updatePlayerScore(p);

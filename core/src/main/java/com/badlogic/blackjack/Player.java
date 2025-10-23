@@ -39,9 +39,9 @@ public class Player extends Dealer {
     {
         return m_currentBet;
     }
-
-    public void addBalance(double multiplier) {
-        this.m_balance+= (int) (multiplier*this.m_currentBet);
+    public void addBalance(int amount)
+    {
+        this.m_balance += amount;
     }
 
     public boolean isActive() {
@@ -51,8 +51,6 @@ public class Player extends Dealer {
     public void toggleActive() {
         this.m_active = !this.m_active;
     }
-
-
 
     public void reset()
     {
