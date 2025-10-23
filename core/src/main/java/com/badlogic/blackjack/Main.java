@@ -1,6 +1,7 @@
 package com.badlogic.blackjack;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 /**
@@ -36,6 +37,10 @@ public class Main extends Game {
         super.render();
     }
 
+    public void setScreen(GameScreen s, Object c) {
+        super.setScreen(s);
+    }
+
     @Override
     public void dispose() {
         // Dispose of shared assets and batch
@@ -43,9 +48,4 @@ public class Main extends Game {
 
         super.dispose();
     }
-
-    //
-    // The old resize(), pause(), and resume() methods have been REMOVED.
-    // The 'Game' superclass now handles delegating these calls to the active screen.
-    //
 }

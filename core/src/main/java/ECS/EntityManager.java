@@ -4,12 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EntityManager {
-    private List<Entity> m_entities = new ArrayList<>();
+    private final List<Entity> m_entities = new ArrayList<>();
     public List<List<Entity>> m_playerCardsList = new ArrayList<>();
     private int nextId = 0;
 
     public EntityManager() {}
 
+    public void update() {
+
+    }
 
     public Entity createEntity(String tag) {
         Entity e = new Entity(nextId++, tag); // uses factory
