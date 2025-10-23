@@ -4,5 +4,6 @@ public enum SoundType
 {
     CARD_DEAL,
     BET,
-    LOCKBET
+    LOCKBET,
+    STAND
 }

@@ -67,6 +67,7 @@ public class UI {
         standButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.STAND, 1.0f);
                 blackjackLogic.stand();
             }
         });
