@@ -5,20 +5,16 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 public class StartScreen implements Screen {
 
-    private final Main game;
     private Stage stage;
     private Skin skin; // Assumes you have a skin in assets
 
     public StartScreen(final Main game) {
-        this.game = game;
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
 
@@ -36,13 +32,22 @@ public class StartScreen implements Screen {
         stage.addActor(table);
 
         TextButton startButton = new TextButton("Start Game", skin);
-        table.add(startButton).fillX().uniformX();
+
+        SelectBox players = new SelectBox(skin);
+        Label txt = new Label("Number of players:", skin);
+
+        players.setItems(1,2,3,4,5,6,7);
+
+        table.add(txt).padRight(10);
+        table.add(players);
+        table.row();
+        table.add(startButton).padTop(30).fill().colspan(2);
 
         startButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 // This is the screen transition!
-                game.setScreen(new GameScreen(game));
+                game.setScreen(new GameScreen(game, (int)players.getSelected()));
                 dispose(); // Dispose this screen
             }
         });
@@ -55,7 +60,7 @@ public class StartScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
+        Gdx.gl.glClearColor(0.4f, 0.2f, 0.2f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));

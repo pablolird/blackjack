@@ -14,7 +14,7 @@ public class BlackjackLogic {
     UI gameUI;
 
 
-    public BlackjackLogic(Sequencer sequencer) {
+    public BlackjackLogic(Sequencer sequencer, int n) {
         this.sequencer = sequencer;
         this.deck = new Deck();
         this.dealer = new Dealer();
@@ -22,23 +22,15 @@ public class BlackjackLogic {
 
         playersList = new ArrayList<>();
 
-        Player p1 = new Player("Pablo", 100);
-        Player p2 = new Player("Pedro", 100);
-        Player p3 = new Player("Sebas", 100);
-        Player p4 = new Player("Carlos", 100);
-        Player p5 = new Player("Alvaro", 100);
-        Player p6 = new Player("Ale", 100);
-        Player p7 = new Player("XD", 100);
 
-        playersList.add(p1);
-        playersList.add(p2);
-        playersList.add(p3);
-        playersList.add(p4);
-        playersList.add(p5);
-        playersList.add(p6);
-        playersList.add(p7);
+        for (int i = 0; i < n; i++) {
+            Player p = new Player("player"+i, 100);
+
+            playersList.add(p);
+        }
 
         this.current_playerIndex = 0;
+
     }
 
     public void nextPlayer() {

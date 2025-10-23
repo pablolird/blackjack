@@ -38,7 +38,6 @@ public class ECS {
         return card;
     }
 
-    // You will also need a way to find an entity by its card ID
     public Entity findCardEntity(int cardId) {
         for (Entity e : entityManager.getEntities()) {
             if (e.hasComponent(CCard.class)) {
@@ -52,7 +51,7 @@ public class ECS {
     }
 
     public void update(float delta) {
-
+        entityManager.update();
     }
 
     public void render(SpriteBatch spriteBatch) {

@@ -12,7 +12,6 @@ import com.badlogic.blackjack.audio.AudioManager;
 // Implement the Screen interface
 public class GameScreen implements Screen {
     private final Main game; // Reference to the Main game class
-
     private final FitViewport gameViewport;
     private final Viewport uiViewport;
     private final SpriteBatch spriteBatch; // Will be the shared batch
@@ -24,7 +23,7 @@ public class GameScreen implements Screen {
     private final UI ui;
     private final AudioManager audioManager;
 
-    public GameScreen(Main game) {
+    public GameScreen(Main game, int numPlayers) {
         this.game = game;
         this.assets = game.assets; // Get shared assets
         this.spriteBatch = game.spriteBatch; // Get shared sprite batch
@@ -37,7 +36,7 @@ public class GameScreen implements Screen {
         audioManager = new AudioManager(assets);
         ecs = new ECS(assets);
         sequencer = new Sequencer(ecs, audioManager);
-        logic = new BlackjackLogic(sequencer);
+        logic = new BlackjackLogic(sequencer, numPlayers);
         ui = new UI(uiViewport, spriteBatch, logic, audioManager);
 
         logic.setGameUI(ui);
