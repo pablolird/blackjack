@@ -1,48 +1,51 @@
-    package com.badlogic.blackjack;
-    import com.badlogic.gdx.ApplicationListener;
-    import com.badlogic.gdx.Gdx;
-    import com.badlogic.gdx.graphics.GL20;
+package com.badlogic.blackjack;
 
-    /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
-    public class Main implements ApplicationListener {
-        public static final int WORLD_WIDTH = 960;
-        public static final int WORLD_HEIGHT = 540;
-        private BlackjackGame game;
+import com.badlogic.gdx.Game;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
-        @Override
-        public void create() {
-            game = new BlackjackGame(WORLD_WIDTH, WORLD_HEIGHT);
-        }
+/**
+ * Main game class that manages screens.
+ * Changed from ApplicationListener to extend Game.
+ */
+public class Main extends Game {
+    public static final int WORLD_WIDTH = 960;
+    public static final int WORLD_HEIGHT = 540;
 
-        @Override
-        public void resize(int width, int height) {
-            game.resize(width, height);
-        }
+    // These will be shared by all screens
+    public SpriteBatch spriteBatch;
+    public Assets assets;
 
-        @Override
-        public void render() {
-            float delta = Gdx.graphics.getDeltaTime();
+    // The old 'private BlackjackGame game;' field has been removed.
 
-            Gdx.gl.glClearColor(0, 0, 0, 1);
-            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+    @Override
+    public void create() {
+        // Create shared objects
+        spriteBatch = new SpriteBatch();
+        assets = new Assets();
+        assets.loadFromFile();
 
-            game.update(delta);
-            game.render();
-        }
-
-
-        @Override
-        public void pause() {
-            // Invoked when your application is paused.
-        }
-
-        @Override
-        public void resume() {
-            // Invoked when your application is resumed after pause.
-        }
-
-        @Override
-        public void dispose() {
-            // Destroy application's resources here.
-        }
+        // Set the very first screen to be shown
+        // The Game superclass will store this in its 'screen' field
+        this.setScreen(new StartScreen(this));
     }
+
+    @Override
+    public void render() {
+        // This will automatically call the render() method
+        // of the currently active screen
+        super.render();
+    }
+
+    @Override
+    public void dispose() {
+        // Dispose of shared assets and batch
+        if (spriteBatch != null) spriteBatch.dispose();
+
+        super.dispose();
+    }
+
+    //
+    // The old resize(), pause(), and resume() methods have been REMOVED.
+    // The 'Game' superclass now handles delegating these calls to the active screen.
+    //
+}
