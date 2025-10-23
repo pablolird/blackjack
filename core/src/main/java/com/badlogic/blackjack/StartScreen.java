@@ -33,7 +33,7 @@ public class StartScreen implements Screen {
 
         TextButton startButton = new TextButton("Start Game", skin);
 
-        SelectBox players = new SelectBox(skin);
+        SelectBox<Integer> players = new SelectBox<Integer>(skin);
         Label txt = new Label("Number of players:", skin);
 
         players.setItems(1,2,3,4,5,6,7);

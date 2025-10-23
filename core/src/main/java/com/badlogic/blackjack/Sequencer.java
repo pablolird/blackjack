@@ -24,6 +24,10 @@ public class Sequencer {
         //this.handLayoutManager = new HandLayoutManager();
     }
 
+    public void clearCardEntities() {
+        ecs.clearCardEntities();
+    }
+
     public void addAction(Action action) {
         actions.add(action);
     }
@@ -31,6 +35,45 @@ public class Sequencer {
     public void update(float delta) {
         // Remove element avoiding iterator invalidation!
         actions.removeIf(a -> a.update(delta));
+    }
+
+    public void moveCardsToDeck(List<Player> players, Dealer dealer) {
+        SequenceAction sequenceAction = new SequenceAction();
+
+        for (int i = 0; i < players.size(); i++) {
+            sequenceAction.add(CreateReturnCardsToDeckAction(players.get(i)));
+        }
+
+        sequenceAction.add(CreateReturnCardsToDeckAction(dealer));
+
+        actions.add(sequenceAction);
+    }
+
+    public Action CreateReturnCardsToDeckAction(Dealer p) {
+        float duration = 0.25f;
+        List<Card> cards = p.m_currentCards;
+
+        Vector2 deckPosition = g.position.get("DECK");
+        float deckRotation = 0f;
+
+        ParallelAction sequenceAction = new ParallelAction();
+
+        for (Card c : cards) {
+            Entity newCardEntity = ecs.findCardEntity(c.m_id);
+            Action moveCard = moveCardAction(newCardEntity, deckPosition, deckRotation,duration);
+            sequenceAction.add(moveCard);
+        }
+        return sequenceAction;
+    }
+
+    public Action moveCardAction(Entity cardEntity, Vector2 position, float rotation, float duration) {
+        ParallelAction p = new ParallelAction();
+        Action moveAction = new MoveToAction(cardEntity, position, rotation, duration);
+        Action playCardSound = new PlaySFXAction(audioManager, SoundType.CARD_DEAL, 0.95f);
+        p.add(moveAction);
+        p.add(playCardSound);
+
+        return p;
     }
 
     public void createDealCardToDealerAction(Dealer dealer) {

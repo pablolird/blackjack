@@ -4,6 +4,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import ECS.*;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 
 public class ECS {
     private final Get g;
@@ -36,6 +39,14 @@ public class ECS {
         card.addComponent(new CCard(c.m_id, c.getSuit(), c.getRank()));
 
         return card;
+    }
+
+    public void clearCardEntities() {
+        List<Entity> toRemove = entityManager.getEntities().stream()
+            .filter(e -> e.hasComponent(CCard.class))
+            .collect(Collectors.toList());
+
+        toRemove.forEach(entityManager::destroyEntity);
     }
 
     public Entity findCardEntity(int cardId) {

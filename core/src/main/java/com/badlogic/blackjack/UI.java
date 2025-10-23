@@ -136,6 +136,30 @@ public class UI {
         buildLayout(bl.playersList);
     }
 
+    public void rebuildLayout(List<Player> players) {
+        // First, remove all existing player and dealer labels from the stage
+        if (dealerScoreLabel != null) {
+            dealerScoreLabel.remove(); // remove() detaches the actor from the stage
+        }
+        for (Label label : playerScoreLabels.values()) {
+            label.remove();
+        }
+        for (Label label : playerBalanceLabels.values()) {
+            label.remove();
+        }
+
+        // Second, clear the maps that track the labels
+        playerScoreLabels.clear();
+        playerBalanceLabels.clear();
+
+        // Third, reset the currentPlayer reference in the UI
+        this.currentPlayer = null;
+
+        // Finally, call your original buildLayout method to recreate everything
+        // with the new, filtered list of players.
+        buildLayout(players);
+    }
+
     // This method now places labels at specific coordinates
     public void buildLayout(List<Player> players) {
         // DEALER
@@ -221,7 +245,7 @@ public class UI {
 
     public void updateCurrentPlayerColor(Player p)
     {
-        if (!(currentPlayer == null)) {
+        if (currentPlayer != null && playerScoreLabels.containsKey(currentPlayer)) {
             playerScoreLabels.get(currentPlayer).setColor(128 / 255f, 128 / 255f, 128 / 255f, 0.75f);
         }
         setCurrentPlayer(p);
@@ -229,7 +253,7 @@ public class UI {
 
     public void setCurrentPlayer(Player p) {
         currentPlayer = p;
-        if(!(currentPlayer == null)) {
+        if(currentPlayer != null && playerScoreLabels.containsKey(currentPlayer)) {
             playerScoreLabels.get(currentPlayer).setColor(Color.WHITE);
         }
     }

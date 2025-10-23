@@ -2,7 +2,8 @@ package com.badlogic.blackjack;
 import java.util.ArrayList;
 import java.util.List;
 
-enum GameState { STARTING, BETTING, DEALING_DEALER, DEALING_PLAYERS, PLAYER_TURN, ANIMATIONS_IN_PROGRESS, DEALER_TURN, RESOLVING_BETS }
+enum GameState { STARTING, BETTING, DEALING_DEALER, DEALING_PLAYERS, PLAYER_TURN, ANIMATIONS_IN_PROGRESS, DEALER_TURN, RESOLVING_BETS,
+                 FINISHING_ROUND}
 
 public class BlackjackLogic {
     private final Sequencer sequencer;
@@ -24,7 +25,7 @@ public class BlackjackLogic {
 
 
         for (int i = 0; i < n; i++) {
-            Player p = new Player("player"+i, 100);
+            Player p = new Player("player", 100);
 
             playersList.add(p);
         }
@@ -126,15 +127,23 @@ public class BlackjackLogic {
                 p.addBalance(multiplier);
                 gameUI.updatePlayerBalance(p);
             }
-
-            p.reset(); // LOW LEVEL ONLY
             gameUI.updatePlayerScore(p);
         }
 
-        dealer.reset(); // LOW LEVEL ONLY
         gameUI.updateDealerScore(dealer);
         gameUI.showPlayerActionPanel(false);
-        // gameState = GameState.STARTING;
+
+        sequencer.moveCardsToDeck(playersList, dealer);
+
+        dealer.reset();
+        for (Player p : playersList) {
+            p.reset();
+            if (p.getBalance() < 1) {
+                p.toggleActive();
+            }
+        }
+
+        gameState = GameState.FINISHING_ROUND;
     }
 
     public void dealInitialCards() {
@@ -177,6 +186,16 @@ public class BlackjackLogic {
     public void update(float delta) {
         switch (gameState) {
             case STARTING:
+                playersList.removeIf(p -> !p.isActive());
+                gameUI.rebuildLayout(playersList);
+                if (playersList.isEmpty()) {
+                    System.out.println("All players are out of money. Game Over.");
+                    gameState = GameState.FINISHING_ROUND; // Or a new "GAME_OVER" state
+                    return; // Stop processing
+                }
+
+                // Reset player index just in case the last player was removed
+                current_playerIndex = 0;
                 gameState = GameState.BETTING;
                 gameUI.showBettingPanel(true);
                 gameUI.setCurrentPlayer(playersList.get(current_playerIndex));
@@ -225,6 +244,12 @@ public class BlackjackLogic {
                 break;
             case RESOLVING_BETS:
                 resolveBets();
+                break;
+            case FINISHING_ROUND:
+                if (!sequencer.isBusy()) {
+                    sequencer.clearCardEntities();
+                    gameState = GameState.STARTING;
+                }
                 break;
         }
     }
