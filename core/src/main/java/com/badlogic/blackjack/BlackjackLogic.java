@@ -3,11 +3,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 enum GameState { STARTING, BETTING, DEALING_DEALER, DEALING_PLAYERS, PLAYER_TURN, ANIMATIONS_IN_PROGRESS, DEALER_TURN, RESOLVING_BETS,
-                 FINISHING_ROUND}
+                 FINISHING_ROUND, GAME_OVER}
 
 public class BlackjackLogic {
     private final Sequencer sequencer;
     int current_playerIndex;
+    int numPlayers;
     Deck deck;
     Dealer dealer;
     List<Player> playersList;
@@ -16,6 +17,7 @@ public class BlackjackLogic {
 
 
     public BlackjackLogic(Sequencer sequencer, int n) {
+        this.numPlayers = n;
         this.sequencer = sequencer;
         this.deck = new Deck();
         this.dealer = new Dealer();
@@ -189,8 +191,7 @@ public class BlackjackLogic {
                 playersList.removeIf(p -> !p.isActive());
                 gameUI.rebuildLayout(playersList);
                 if (playersList.isEmpty()) {
-                    System.out.println("All players are out of money. Game Over.");
-                    gameState = GameState.FINISHING_ROUND; // Or a new "GAME_OVER" state
+                    gameState = GameState.GAME_OVER; // Or a new "GAME_OVER" state
                     return; // Stop processing
                 }
 
@@ -250,6 +251,9 @@ public class BlackjackLogic {
                     sequencer.clearCardEntities();
                     gameState = GameState.STARTING;
                 }
+                break;
+            case GAME_OVER:
+                gameUI.showGameOverMenu();
                 break;
         }
     }

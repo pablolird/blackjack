@@ -37,7 +37,7 @@ public class GameScreen implements Screen {
         ecs = new ECS(assets);
         sequencer = new Sequencer(ecs, audioManager);
         logic = new BlackjackLogic(sequencer, numPlayers);
-        ui = new UI(uiViewport, spriteBatch, logic, audioManager);
+        ui = new UI(uiViewport, spriteBatch, logic, audioManager, game);
 
         logic.setGameUI(ui);
         // Use constants from Main

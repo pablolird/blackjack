@@ -4,7 +4,6 @@ import com.badlogic.blackjack.audio.AudioManager;
 import com.badlogic.blackjack.audio.SoundType;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -24,19 +23,22 @@ public class UI {
     private final Table playerActionTable;
     private final Table bettingActionTable;
     private final Window pauseMenu;
+    private final Window gameOverMenu;
     private final Map<Player, Label> playerScoreLabels;
     private final Map<Player, Label> playerBalanceLabels;
     private final BlackjackLogic blackjackLogic;
     private boolean paused;
     private AudioManager audioManager;
     private final Get g;
+    private Main game;
     private Label dealerScoreLabel;
     private SpriteBatch spriteBatch;
     Player currentPlayer;
 
 
-    public UI(Viewport vp, SpriteBatch sb, BlackjackLogic bl, AudioManager audioManager) {
+    public UI(Viewport vp, SpriteBatch sb, BlackjackLogic bl, AudioManager audioManager, Main game) {
         this.blackjackLogic = bl;
+        this.game = game;
         this.g = new Get();
         this.paused = false;
         playerScoreLabels = new HashMap<>();
@@ -127,7 +129,7 @@ public class UI {
 
         // 3. Build the Pause Menu (initially hidden)
         pauseMenu = new Window("Pause", skin);
-        TextButton quitButton = new TextButton("Leave Room", skin);
+        TextButton quitButton = new TextButton("Quit Game", skin);
         pauseMenu.add(quitButton);
         pauseMenu.pack(); // Size the window to its contents
         pauseMenu.setPosition(stage.getWidth() / 2 - pauseMenu.getWidth() / 2, stage.getHeight() / 2 - pauseMenu.getHeight() / 2);
@@ -135,6 +137,33 @@ public class UI {
         pauseMenu.setVisible(false); // Hide it by default
 
         buildLayout(bl.playersList);
+
+        // 4. Build the Close Menu (initially hidden too)
+        gameOverMenu = new Window("Game Over", skin);
+        gameOverMenu.add(quitButton).expand().padBottom(10).padTop(20);
+        gameOverMenu.row();
+        TextButton restartButton = new TextButton("Restart Game", skin);
+        gameOverMenu.add(restartButton).expand();
+        gameOverMenu.pack(); // Size the window to its contents
+        gameOverMenu.setPosition(stage.getWidth() / 2 - pauseMenu.getWidth() / 2, stage.getHeight() / 2 - pauseMenu.getHeight() / 2);
+        stage.addActor(gameOverMenu);
+        gameOverMenu.setVisible(false); // Hide it by default
+
+        quitButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new StartScreen(game));
+                dispose(); // Dispose this screen
+            }
+        });
+
+        restartButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new GameScreen(game, bl.numPlayers));
+                dispose(); // Dispose this screen
+            }
+        });
     }
 
     public void rebuildLayout(List<Player> players) {
@@ -286,5 +315,9 @@ public class UI {
     public void togglePauseMenu() {
         paused = !paused;
         pauseMenu.setVisible(paused);
+    }
+
+    public void showGameOverMenu() {
+        gameOverMenu.setVisible(true);
     }
 }
