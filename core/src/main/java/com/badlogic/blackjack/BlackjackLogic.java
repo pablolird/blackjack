@@ -169,7 +169,7 @@ public class BlackjackLogic {
             return;
         }
 
-        curentPlayer.addCard(deck.drawCard());
+        curentPlayer.addCard(deck.deal());
         sequencer.createDealCardAction(curentPlayer, current_playerIndex);
     }
 
@@ -179,7 +179,7 @@ public class BlackjackLogic {
         }
 
         Player p = playersList.get(current_playerIndex);
-        p.addCard(deck.drawCard());
+        p.addCard(deck.deal());
         sequencer.createDealCardAction(p,current_playerIndex);
         gameUI.updatePlayerScore(p);
 
@@ -191,6 +191,7 @@ public class BlackjackLogic {
     public void update(float delta) {
         switch (gameState) {
             case STARTING:
+                deck.reset();
                 playersList.removeIf(p -> !p.isActive());
                 gameUI.rebuildLayout(playersList);
                 if (playersList.isEmpty()) {
@@ -209,7 +210,7 @@ public class BlackjackLogic {
             case DEALING_DEALER:
                 if(!sequencer.isBusy())
                 {
-                    dealer.addCard(deck.drawCard());
+                    dealer.addCard(deck.deal());
                     sequencer.createDealCardToDealerAction(dealer);
                     gameUI.updateDealerScore(dealer);
                     gameState = GameState.DEALING_PLAYERS;
@@ -236,7 +237,7 @@ public class BlackjackLogic {
                 {
                     if(dealer.totalValue() < 17)
                     {
-                        dealer.addCard(deck.drawCard());
+                        dealer.addCard(deck.deal());
                         sequencer.createDealCardToDealerAction(dealer);
                         gameUI.updateDealerScore(dealer);
                     }
