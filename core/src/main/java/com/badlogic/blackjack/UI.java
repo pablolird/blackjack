@@ -140,7 +140,10 @@ public class UI {
 
         // 4. Build the Close Menu (initially hidden too)
         gameOverMenu = new Window("Game Over", skin);
-        gameOverMenu.add(quitButton).expand().padBottom(10).padTop(20);
+        gameOverMenu.pad(20);
+        gameOverMenu.padTop(50);
+        gameOverMenu.add(quitButton);
+
         gameOverMenu.row();
         TextButton restartButton = new TextButton("Restart Game", skin);
         gameOverMenu.add(restartButton).expand();
