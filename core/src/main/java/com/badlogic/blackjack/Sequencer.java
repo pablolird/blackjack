@@ -39,7 +39,8 @@ public class Sequencer {
 
     public void moveCardsToDeck(List<Player> players, Dealer dealer) {
         SequenceAction sequenceAction = new SequenceAction();
-
+        DelayAction d = new DelayAction(5.0f);
+        sequenceAction.add(d);
         for (int i = 0; i < players.size(); i++) {
             sequenceAction.add(CreateReturnCardsToDeckAction(players.get(i)));
         }

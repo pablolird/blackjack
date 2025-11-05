@@ -152,7 +152,7 @@ public class UI {
         quitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.setScreen(new StartScreen(game));
+                game.setScreen(new LocalSetupScreen(game));
                 dispose(); // Dispose this screen
             }
         });

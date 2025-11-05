@@ -1,8 +1,8 @@
 package com.badlogic.blackjack;
 
 import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import jdk.javadoc.internal.tool.Start;
 
 /**
  * Main game class that manages screens.
@@ -27,7 +27,7 @@ public class Main extends Game {
 
         // Set the very first screen to be shown
         // The Game superclass will store this in its 'screen' field
-        this.setScreen(new StartScreen(this));
+        setScreen(new StartScreen(this));
     }
 
     @Override

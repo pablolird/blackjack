@@ -25,7 +25,6 @@ public class BlackjackLogic {
 
         playersList = new ArrayList<>();
 
-
         for (int i = 0; i < n; i++) {
             Player p = new Player("player", 100);
 

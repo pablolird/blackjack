@@ -2,46 +2,40 @@ package com.badlogic.blackjack;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
-public class StartScreen implements Screen {
-
+public class MultiplayerScreen implements Screen
+{
     private Stage stage;
     private Skin skin;
 
-    private final Main game;
     private final SpriteBatch spriteBatch;
     private final Assets assets;
 
-    // Toggle for background style
     private final boolean SetTiledBG = true;
 
-    public StartScreen(final Main game) {
-        this.game = game;
+    public MultiplayerScreen(final Main game)
+    {
         this.spriteBatch = game.spriteBatch;
         this.assets = game.assets;
 
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
 
-        try {
+        try
+        {
             skin = new Skin(Gdx.files.internal("skin/x1/uiskin.json"));
-        } catch (Exception e) {
-            Gdx.app.error("StartScreen", "Could not load skin", e);
-            // Create a programmatic skin as a fallback
+        } catch (Exception e)
+        {
+            Gdx.app.error("MultiplayerScreen", "Could not load skin", e);
             skin = new Skin();
         }
 
@@ -49,51 +43,42 @@ public class StartScreen implements Screen {
         table.setFillParent(true);
         stage.addActor(table);
 
-        Label gameTitle = new Label("Blackjack Game", skin);
-        gameTitle.setColor(Color.BLACK);
-
-        table.add(gameTitle).padBottom(50).colspan(2);
+        // JOIN
+        TextButton joinGameButton = new TextButton("Join Game", skin);
+        table.add(joinGameButton).pad(10).fillX();
         table.row();
 
-        // Local Game Button
-        TextButton localButton = new TextButton("Local Game", skin);
-        table.add(localButton).pad(10).fillX();
+        // HOST
+        TextButton HostGameButton = new TextButton("Host Game", skin);
+        table.add(HostGameButton).pad(10).fillX();
         table.row();
 
-        // Multiplayer Button (functionless for now)
-        TextButton multiplayerButton = new TextButton("Multiplayer", skin);
-        table.add(multiplayerButton).pad(10).fillX();
-        table.row();
-
-        // Local Game Button Listener
-        localButton.addListener(new ChangeListener() {
+        joinGameButton.addListener(new ChangeListener() {
             @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                // Transition to the existing LocalSetupScreen
-                game.setScreen(new LocalSetupScreen(game));
-                dispose(); // Dispose this screen
+            public void changed(ChangeEvent event, Actor actor)
+            {
+
             }
         });
 
-        // Multiplayer Button Listener (functionless)
-        multiplayerButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-               game.setScreen(new MultiplayerScreen(game));
-               dispose();
-            }
+        HostGameButton.addListener(new ChangeListener()
+        {
+           @Override
+           public void changed(ChangeEvent event, Actor actor)
+           {
+
+           }
         });
     }
-
     @Override
-    public void show() {
+    public void show()
+    {
         Gdx.input.setInputProcessor(stage);
     }
 
     @Override
-    public void render(float delta) {
-        // Clear screen with a solid color, which will be visible if SetTiledBG is false
-        // The color used here matches the one previously in LocalSetupScreen
+    public void render(float delta)
+    {
         Gdx.gl.glClearColor(0.4f, 0.2f, 0.2f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -152,4 +137,7 @@ public class StartScreen implements Screen {
         // Dispose the skin since this screen created it.
         skin.dispose();
     }
+
 }
+
+

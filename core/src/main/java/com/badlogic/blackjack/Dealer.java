@@ -8,7 +8,6 @@ public class Dealer {
 
     public Dealer() {}
 
-
     public void addCard(String sign, String suit) {
         this.m_currentCards.add(new Card(sign, suit));
     }

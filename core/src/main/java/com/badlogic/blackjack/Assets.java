@@ -16,6 +16,7 @@ public class Assets {
     public Texture board;
     public int cardWidth;
     public int cardHeight;
+    public Texture menuBackground;
 
     public Sound dealCardSFX;
     public Sound betSFX;
@@ -51,6 +52,16 @@ public class Assets {
             for (int rank = 0; rank < 13; rank++) {
                 cardMap.put(ranks[rank] + "_of_" + suits[suit], new Sprite(cardRegions[suit][rank]));
             }
+        }
+
+        try {
+
+            menuBackground = new Texture(Gdx.files.internal("menu_background_tile.png"));
+            menuBackground.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+        } catch (Exception e) {
+            Gdx.app.error("Assets", "Could not load menu_background_tile.png. Using existing board texture as fallback.", e);
+            menuBackground = board;
+            menuBackground.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
         }
 
         dealCardSFX = Gdx.audio.newSound(Gdx.files.internal("cardSlide2AMPx.mp3"));
