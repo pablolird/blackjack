@@ -21,6 +21,7 @@ public class StartScreen implements Screen {
     private Table hostTable;
     private Table startTable;
     private Table joinGameTable;
+    private Table localTable;
     private TextButtonStyle t1;
     private int depth = 0;
 
@@ -33,7 +34,51 @@ public class StartScreen implements Screen {
         return button;
     }
 
-    Table startScreenLayout(Main game) {
+    Table localGameLayout(Main game) {
+        Table table = new Table();
+        table.setFillParent(true);
+
+        table.row().padBottom(10f);
+        Label maxPlayersLabel = new Label("Max number of players: ", skin);
+        maxPlayersLabel.setWidth(100);
+        table.add(maxPlayersLabel).align(Align.left).fill();
+
+        SelectBox<Integer> maxPlayers = new SelectBox<>(skin);
+        maxPlayers.setItems(2,3,4,5,6,7);
+        table.add(maxPlayers).fill();
+
+        table.row();
+
+        TextButton backButton = createButton("Back", skin);
+        table.add(backButton).padRight(10f);
+
+        TextButton createGameButton = createButton("Create Game", skin);
+        table.add(createGameButton).padLeft(10f);
+
+
+        createGameButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                // This is the screen transition!
+                game.setScreen(new GameScreen(game, maxPlayers.getSelected()));
+                dispose(); // Dispose this screen
+            }
+        });
+
+        backButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                // This is the screen transition!
+                localTable.setVisible(false);
+                startTable.setVisible(true);
+                depth = 0;
+            }
+        });
+
+        return table;
+    }
+
+    Table multiplayerScreenLayout(Main game) {
         Table startTable = new Table();
         startTable.setFillParent(true);
 
@@ -45,9 +90,13 @@ public class StartScreen implements Screen {
         startTable.add(titleTable);
         startTable.row();
 
+        TextButton localGame = createButton("Local Game", skin);
+        startTable.add(localGame);
+        startTable.row().pad(10f);
+
         TextButton hostGame = createButton("Host Game", skin);
         startTable.add(hostGame);
-        startTable.row().pad(10f);
+        startTable.row().padBottom(10f);;
 
         TextButton joinGame = createButton("Join Game", skin);
         startTable.add(joinGame);
@@ -55,6 +104,16 @@ public class StartScreen implements Screen {
 
         TextButton exitButton = createButton("Exit", skin);
         startTable.add(exitButton);
+
+        localGame.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                startTable.setVisible(false);
+                localTable.setVisible(true);
+                depth=1;
+            }
+        });
+
 
         hostGame.addListener(new ChangeListener() {
             @Override
@@ -286,6 +345,7 @@ public class StartScreen implements Screen {
         table.add(roomComponent).fillX().padBottom(20f).padLeft(10f).padRight(10f);
         table.row();
     }
+
     public StartScreen(final Main game) {
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Minecraft.ttf"));
         FreeTypeFontParameter parameter = new FreeTypeFontParameter();
@@ -305,11 +365,15 @@ public class StartScreen implements Screen {
 
         skin.add("minecraft-font", font1, BitmapFont.class); // Add font to skin with a name
 
-        startTable = startScreenLayout(game);
+        startTable = multiplayerScreenLayout(game);
         hostTable = hostGameLayout(game);
         joinGameTable = joinGameLayout(game);
+        localTable = localGameLayout(game);
+        localTable.setVisible(false);
+
         stage.addActor(hostTable);
         stage.addActor(startTable);
+        stage.addActor(localTable);
         hostTable.setVisible(false);
         stage.addActor(joinGameTable);
         joinGameTable.setVisible(false);
