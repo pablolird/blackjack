@@ -42,7 +42,7 @@ public class GameScreen implements Screen {
         logic.setGameUI(ui);
         // Use constants from Main
         ecs.createBoardEntity(Main.WORLD_WIDTH, Main.WORLD_HEIGHT);
-        audioManager.playMusic(assets.bgMusic1, 0.3f);
+        audioManager.playMusic(assets.bgMusic1, 0f);
     }
 
     @Override
