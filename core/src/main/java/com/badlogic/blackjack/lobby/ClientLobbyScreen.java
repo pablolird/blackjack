@@ -14,6 +14,9 @@ import com.badlogic.blackjack.network.GameClient;
 import com.badlogic.blackjack.network.NetworkPacket;
 import com.badlogic.blackjack.network.GameClient.LobbyUpdateListener;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
     private final Main game;
     private final Stage stage;
@@ -61,9 +64,9 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
         game.gameClient = client; // Store client for cleanup
     }
 
-    private void transitionToGame(int finalMaxPlayers) {
+    private void transitionToGame(List<String> playerNames) {
         // Client transitions to GameScreen
-        game.setScreen(new GameScreen(game, finalMaxPlayers));
+        game.setScreen(new GameScreen(game, false, playerNames)); // Pass the player names
         dispose();
     }
 
@@ -84,8 +87,7 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
 
     @Override
     public void onGameStart(NetworkPacket.StartGame start) {
-        // Host has started the game, transition!
-        transitionToGame(start.maxPlayers);
+        transitionToGame(start.playerNames);
     }
 
     @Override

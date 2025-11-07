@@ -11,6 +11,8 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.blackjack.audio.AudioManager;
 import com.badlogic.blackjack.network.GameClient.LobbyUpdateListener;
 import com.badlogic.blackjack.network.NetworkPacket;
+import com.badlogic.blackjack.network.NetworkPacket.PlayerInfo;
+import com.badlogic.blackjack.network.NetworkPacket.CardInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -87,9 +89,6 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         }
 
         if (!ui.isPaused()) {
-            if (isHost) {
-                logic.update(delta);
-            }
             sequencer.update(delta); // Sequencer runs on all clients for smooth animations
         }
 
@@ -156,6 +155,58 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     @Override
     public void onGameStateUpdate(NetworkPacket.GameStateUpdate update) {
         Gdx.app.log("GameScreen", "Received state update: " + update.currentGameState + " | Current Player: " + update.currentPlayerName);
-        // In the next step, this is where we will apply the game state to the client's logic and UI.
+
+        // --- THIS IS THE ENTIRE CLIENT-SIDE IMPLEMENTATION ---
+
+        // 1. Update all local player data (balances, bets) from the packet
+        for (PlayerInfo serverPlayer : update.players) {
+            // Find the matching local player
+            Player localPlayer = null;
+            for (Player p : logic.getPlayersList()) {
+                if (p.getName().equals(serverPlayer.name)) {
+                    localPlayer = p;
+                    break;
+                }
+            }
+
+            if (localPlayer != null) {
+                // Force the local player's state to match the server's
+                localPlayer.setBalance(serverPlayer.balance);
+                localPlayer.setCurrentBet(serverPlayer.currentBet);
+
+                // Update the UI with this new data
+                ui.updatePlayerBalance(localPlayer);
+            }
+        }
+
+        // 2. Update the UI panels based on the game state
+        GameState state = GameState.valueOf(update.currentGameState);
+        switch (state) {
+            case BETTING:
+                ui.showBettingPanel(true);
+                ui.showPlayerActionPanel(false);
+                break;
+            case PLAYER_TURN:
+                ui.showBettingPanel(false);
+                ui.showPlayerActionPanel(true);
+                break;
+            default:
+                // Hide both panels during animations, dealing, etc.
+                ui.showBettingPanel(false);
+                ui.showPlayerActionPanel(false);
+                break;
+        }
+
+        // 3. Highlight the current player
+        if (update.currentPlayerIndex >= 0 && update.currentPlayerIndex < logic.getPlayersList().size()) {
+            Player currentPlayer = logic.getPlayersList().get(update.currentPlayerIndex);
+            ui.updateCurrentPlayerColor(currentPlayer);
+        } else {
+            ui.updateCurrentPlayerColor(null); // No player is active, unhighlight all
+        }
+
+        // 4. Synchronize Cards (This is the next big step)
+        // We will add card synchronization here in the next step.
+        // For now, this will get the UI and turns working.
     }
 }
