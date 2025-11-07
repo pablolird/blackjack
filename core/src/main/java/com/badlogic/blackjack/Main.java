@@ -3,7 +3,8 @@ package com.badlogic.blackjack;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.blackjack.network.GameClient; // NEW IMPORT
+import com.badlogic.blackjack.network.GameClient;
+import com.badlogic.blackjack.network.GameServer; // NEW IMPORT
 
 /**
  * Main game class that manages screens.
@@ -22,8 +23,10 @@ public class Main extends Game {
     public SpriteBatch spriteBatch;
     public Assets assets;
 
-    // --- NEW FIELD FOR NETWORK CLEANUP ---
+    // --- MODIFIED: Network Fields ---
     public GameClient gameClient;
+    public GameServer gameServer; // NEW FIELD: Store the server instance
+    // --- END MODIFIED ---
 
     // The old 'private BlackjackGame game;' field has been removed.
 
@@ -54,11 +57,14 @@ public class Main extends Game {
         // Dispose of shared assets and batch
         if (spriteBatch != null) spriteBatch.dispose();
 
-        // --- DISPOSE GAME CLIENT ---
+        // --- DISPOSE NETWORK COMPONENTS ---
         if (gameClient != null) {
             gameClient.dispose();
         }
-        // --- END DISPOSE GAME CLIENT ---
+        if (gameServer != null) { // NEW: Dispose the server
+            gameServer.dispose();
+        }
+        // --- END DISPOSE NETWORK COMPONENTS ---
 
         super.dispose();
     }

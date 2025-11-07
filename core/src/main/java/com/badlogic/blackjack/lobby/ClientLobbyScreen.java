@@ -31,7 +31,7 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
         this.game = game;
         this.ipAddress = ipAddress;
         this.skin = game.assets.skin;
-        this.stage = new Stage(new ScreenViewport());
+        this.stage = new Stage(new ScreenViewport(), game.spriteBatch);
         this.playerName = playerName;
 
         Gdx.input.setInputProcessor(stage);
@@ -86,6 +86,11 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
     public void onGameStart(NetworkPacket.StartGame start) {
         // Host has started the game, transition!
         transitionToGame(start.maxPlayers);
+    }
+
+    @Override
+    public void onGameStateUpdate(NetworkPacket.GameStateUpdate update) {
+        // The Lobby Screen does not care about game state updates, so we do nothing.
     }
 
     @Override

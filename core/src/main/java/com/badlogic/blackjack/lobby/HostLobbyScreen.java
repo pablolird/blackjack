@@ -18,16 +18,19 @@ import com.badlogic.blackjack.network.NetworkPacket;
 import com.badlogic.blackjack.network.GameClient.LobbyUpdateListener;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HostLobbyScreen implements Screen, LobbyUpdateListener {
     private final Main game;
     private final Stage stage;
     private final Skin skin;
-    private GameServer server;
     private GameClient client;
     private final String roomName;
     private final int maxPlayers;
-    private final String hostPlayerName; // NEW FIELD
+    private final String hostPlayerName;
+
+    private List<String> connectedPlayerNames = new ArrayList<>();
 
     private Label roomNameLabel;
     private Label playerCounterLabel;
@@ -42,7 +45,7 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         this.skin = game.assets.skin; // Assuming a skin is available via Main/Assets
         this.hostPlayerName = hostPlayerName; // INITIALIZE NEW FIELD
 
-        this.stage = new Stage(new ScreenViewport());
+        this.stage = new Stage(new ScreenViewport(), game.spriteBatch);
 
         Gdx.input.setInputProcessor(stage);
 
@@ -69,15 +72,15 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
 
         // --- Networking Setup ---
         try {
-            // 1. Start the Server
-            server = new GameServer(roomName, maxPlayers);
-            server.start();
+            // 1. Start the Server and STORE IT IN MAIN
+            game.gameServer = new GameServer(roomName, maxPlayers); // CREATE AND STORE
+            game.gameServer.start();
 
-            // Display Host IP (needs a network call, we'll display a generic message for now)
+            // Display Host IP
             hostIPLabel.setText("Host IP: " + getLocalIP());
 
             // 2. Start the Client (Host is also a client)
-            client = new GameClient(hostPlayerName); // USE THE HOST NAME
+            client = new GameClient(hostPlayerName);
             client.addLobbyUpdateListener(this);
             // Host connects to their own local server
             client.connect("127.0.0.1");
@@ -93,9 +96,9 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 // Broadcast the START_GAME packet to all clients
-                server.sendStartGame();
+                game.gameServer.sendStartGame();
                 // Host immediately transitions to the GameScreen
-                transitionToGame(maxPlayers);
+                transitionToGame(maxPlayers, connectedPlayerNames); // Modified call
             }
         });
     }
@@ -109,22 +112,20 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         }
     }
 
-    private void transitionToGame(int finalMaxPlayers) {
-        // Dispose of the server, as game state will be managed by peer-to-peer
-        // or a simpler server model during the game. For now, we dispose of the Kryonet Server.
-        // In a real game, you would keep the server running and transition its state.
-        if (server != null) {
-            server.dispose();
-            server = null;
-        }
+    private void transitionToGame(int finalMaxPlayers, List<String> playerNames) {
+        // The server (game.gameServer) now remains active.
 
-        // Pass the number of total players to the GameScreen
-        game.setScreen(new GameScreen(game, finalMaxPlayers));
+        // Pass the player names and isHost=true flag
+        game.setScreen(new GameScreen(game, true, playerNames));
         dispose();
     }
 
     @Override
     public void onLobbyUpdate(NetworkPacket.LobbyUpdate update) {
+        // --- MODIFIED: Store the player names ---
+        this.connectedPlayerNames = update.playerNames;
+        // --- END MODIFIED ---
+
         // Update player counter
         playerCounterLabel.setText("Players: " + update.currentPlayers + "/" + update.maxPlayers);
 
@@ -139,10 +140,17 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         startGameButton.setDisabled(update.currentPlayers < 2);
     }
 
+    // --- NEW LISTENER METHOD ---
+    @Override
+    public void onGameStateUpdate(NetworkPacket.GameStateUpdate update) {
+        // Not used in the lobby screen, but required by the interface
+    }
+    // --- END NEW LISTENER METHOD ---
+
     @Override
     public void onGameStart(NetworkPacket.StartGame start) {
         // Host client received its own start packet.
-        transitionToGame(start.maxPlayers);
+        transitionToGame(start.maxPlayers, start.playerNames);
     }
 
     @Override
@@ -173,10 +181,6 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
     @Override
     public void dispose() {
         stage.dispose();
-        // The server is typically disposed when the game starts, but just in case
-        if (server != null) {
-            server.dispose();
-        }
-        // Client disposal is handled in Main.dispose() or when transitioning
+        // The server is NOT disposed here; it stays running until Main.dispose()
     }
 }

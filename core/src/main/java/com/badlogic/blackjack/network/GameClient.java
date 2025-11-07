@@ -25,6 +25,9 @@ public class GameClient {
     public interface LobbyUpdateListener {
         void onLobbyUpdate(NetworkPacket.LobbyUpdate update);
         void onGameStart(NetworkPacket.StartGame start);
+        // --- NEW ---
+        void onGameStateUpdate(NetworkPacket.GameStateUpdate update);
+        // --- END NEW ---
     }
 
     public GameClient(String playerName) {
@@ -38,6 +41,11 @@ public class GameClient {
         client.getKryo().register(NetworkPacket.RegisterPlayer.class);
         client.getKryo().register(NetworkPacket.LobbyUpdate.class);
         client.getKryo().register(NetworkPacket.StartGame.class);
+        // --- NEW REGISTRATIONS ---
+        client.getKryo().register(NetworkPacket.PlayerActionType.class); // Register the enum
+        client.getKryo().register(NetworkPacket.PlayerAction.class);
+        client.getKryo().register(NetworkPacket.GameStateUpdate.class);
+        // --- END NEW REGISTRATIONS ---
         client.getKryo().register(ArrayList.class);
     }
 
@@ -60,6 +68,15 @@ public class GameClient {
                             listener.onGameStart(start);
                         }
                     });
+                } else if (object instanceof NetworkPacket.GameStateUpdate) {
+                    // --- NEW: Handle Game State Update ---
+                    final NetworkPacket.GameStateUpdate update = (NetworkPacket.GameStateUpdate) object;
+                    Gdx.app.postRunnable(() -> {
+                        for (LobbyUpdateListener listener : listeners) {
+                            listener.onGameStateUpdate(update);
+                        }
+                    });
+                    // --- END NEW ---
                 }
             }
 
@@ -73,6 +90,19 @@ public class GameClient {
     public void addLobbyUpdateListener(LobbyUpdateListener listener) {
         listeners.add(listener);
     }
+
+    // --- NEW: Helper method for sending actions ---
+    public void sendAction(NetworkPacket.PlayerActionType type, int amount) {
+        NetworkPacket.PlayerAction action = new NetworkPacket.PlayerAction();
+        action.action = type;
+        action.amount = amount;
+        client.sendTCP(action);
+        Gdx.app.log("GameClient", "Sent action: " + type + " / " + amount);
+    }
+    public void sendAction(NetworkPacket.PlayerActionType type) {
+        sendAction(type, 0);
+    }
+    // --- END NEW ---
 
     /**
      * Attempts to connect to the server and automatically starts the client thread.

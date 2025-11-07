@@ -1,16 +1,22 @@
 package com.badlogic.blackjack;
 
+import com.badlogic.blackjack.network.GameServer;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.Screen; // <-- Import Screen
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.blackjack.audio.AudioManager;
+import com.badlogic.blackjack.network.GameClient.LobbyUpdateListener;
+import com.badlogic.blackjack.network.NetworkPacket;
+
+import java.util.ArrayList;
+import java.util.List;
 
 // Implement the Screen interface
-public class GameScreen implements Screen {
+public class GameScreen implements Screen, LobbyUpdateListener {
     private final Main game; // Reference to the Main game class
     private final FitViewport gameViewport;
     private final Viewport uiViewport;
@@ -23,10 +29,23 @@ public class GameScreen implements Screen {
     private final UI ui;
     private final AudioManager audioManager;
 
-    public GameScreen(Main game, int numPlayers) {
+    private final boolean isHost;
+    private final List<String> playerNames;
+    private final GameServer gameServer;
+
+    public GameScreen(Main game, boolean isHost, List<String> playerNames) {
         this.game = game;
         this.assets = game.assets; // Get shared assets
         this.spriteBatch = game.spriteBatch; // Get shared sprite batch
+
+        this.isHost = isHost;
+        this.playerNames = playerNames;
+        this.gameServer = isHost ? game.gameServer : null;
+
+        // All clients (host and non-host) need to be listeners for state updates
+        if (game.gameClient != null) {
+            game.gameClient.addLobbyUpdateListener(this);
+        }
 
         // Use the constants from Main
         gameViewport = new FitViewport(Main.WORLD_WIDTH, Main.WORLD_HEIGHT);
@@ -36,13 +55,28 @@ public class GameScreen implements Screen {
         audioManager = new AudioManager(assets);
         ecs = new ECS(assets);
         sequencer = new Sequencer(ecs, audioManager);
-        logic = new BlackjackLogic(sequencer, numPlayers);
+
+
+        logic = new BlackjackLogic(sequencer, playerNames);
         ui = new UI(uiViewport, spriteBatch, logic, audioManager, game);
 
         logic.setGameUI(ui);
         // Use constants from Main
         ecs.createBoardEntity(Main.WORLD_WIDTH, Main.WORLD_HEIGHT);
         audioManager.playMusic(assets.bgMusic1, 0f);
+    }
+
+    // --- Overload for existing local game calls, passing dummy values ---
+    public GameScreen(Main game, int numPlayers) {
+        this(game, false, createDummyPlayerNames(numPlayers));
+    }
+
+    private static List<String> createDummyPlayerNames(int n) {
+        List<String> names = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            names.add("Player " + (i+1));
+        }
+        return names;
     }
 
     @Override
@@ -53,8 +87,10 @@ public class GameScreen implements Screen {
         }
 
         if (!ui.isPaused()) {
-            logic.update(delta);
-            sequencer.update(delta);
+            if (isHost) {
+                logic.update(delta);
+            }
+            sequencer.update(delta); // Sequencer runs on all clients for smooth animations
         }
 
         ecs.update(delta);
@@ -105,5 +141,21 @@ public class GameScreen implements Screen {
     @Override
     public void resume() {
         // For handling game resume
+    }
+
+    @Override
+    public void onLobbyUpdate(NetworkPacket.LobbyUpdate update) {
+        // Not used in GameScreen
+    }
+
+    @Override
+    public void onGameStart(NetworkPacket.StartGame start) {
+        // Not used in GameScreen
+    }
+
+    @Override
+    public void onGameStateUpdate(NetworkPacket.GameStateUpdate update) {
+        Gdx.app.log("GameScreen", "Received state update: " + update.currentGameState + " | Current Player: " + update.currentPlayerName);
+        // In the next step, this is where we will apply the game state to the client's logic and UI.
     }
 }

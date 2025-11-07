@@ -16,7 +16,31 @@ public class BlackjackLogic {
     UI gameUI;
 
 
+    public BlackjackLogic(Sequencer sequencer, List<String> playerNames) {
+        this.numPlayers = playerNames.size();
+        this.sequencer = sequencer;
+        this.deck = new Deck();
+        this.dealer = new Dealer();
+        gameState = GameState.STARTING;
+
+        playersList = new ArrayList<>();
+
+        // Use the actual player names from the network
+        for (String name : playerNames) {
+            Player p = new Player(name, 100);
+            playersList.add(p);
+        }
+
+        this.current_playerIndex = 0;
+    }
+
+    // --- OVERLOADED CONSTRUCTOR (Kept for compatibility with old local game calls) ---
     public BlackjackLogic(Sequencer sequencer, int n) {
+        // Create dummy names for local game initialization
+        List<String> dummyNames = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            dummyNames.add("Player " + (i+1));
+        }
         this.numPlayers = n;
         this.sequencer = sequencer;
         this.deck = new Deck();
@@ -26,14 +50,13 @@ public class BlackjackLogic {
         playersList = new ArrayList<>();
 
 
-        for (int i = 0; i < n; i++) {
-            Player p = new Player("player", 100);
+        for (String name : dummyNames) {
+            Player p = new Player(name, 100);
 
             playersList.add(p);
         }
 
         this.current_playerIndex = 0;
-
     }
 
     public void nextPlayer() {

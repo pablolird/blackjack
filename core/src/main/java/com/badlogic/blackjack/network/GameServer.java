@@ -4,6 +4,8 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.blackjack.BlackjackLogic; // New import
+import com.badlogic.blackjack.Sequencer; // New import - will need a non-rendering one for the server
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,6 +22,12 @@ public class GameServer {
     // Map connection ID to Player Name
     private final Map<Integer, String> connectedPlayers = new HashMap<>();
 
+    // --- NEW FIELDS FOR GAME STATE ---
+    // Maps player name to their index in the BlackjackLogic playersList
+    private final Map<String, Integer> playerNameToIndex = new HashMap<>();
+    private BlackjackLogic gameLogic;
+    // --- END NEW FIELDS ---
+
     public GameServer(String roomName, int maxPlayers) {
         this.roomName = roomName;
         this.maxPlayers = maxPlayers;
@@ -33,6 +41,11 @@ public class GameServer {
         server.getKryo().register(NetworkPacket.RegisterPlayer.class);
         server.getKryo().register(NetworkPacket.LobbyUpdate.class);
         server.getKryo().register(NetworkPacket.StartGame.class);
+        // --- NEW REGISTRATIONS ---
+        server.getKryo().register(NetworkPacket.PlayerActionType.class); // Register the enum
+        server.getKryo().register(NetworkPacket.PlayerAction.class);
+        server.getKryo().register(NetworkPacket.GameStateUpdate.class);
+        // --- END NEW REGISTRATIONS ---
         // Also need to register any custom types used in the DTOs
         server.getKryo().register(ArrayList.class);
     }
@@ -57,6 +70,21 @@ public class GameServer {
                         Gdx.app.log("GameServer", "Lobby full. Rejecting connection: " + packet.name);
                         connection.close();
                     }
+                } else if (object instanceof NetworkPacket.PlayerAction) {
+                    // --- NEW: Handle Game Actions ---
+                    if (gameLogic == null) return; // Ignore if game hasn't started
+
+                    NetworkPacket.PlayerAction action = (NetworkPacket.PlayerAction) object;
+                    String playerName = connectedPlayers.get(connection.getID());
+                    Integer playerIndex = playerNameToIndex.get(playerName);
+
+                    if (playerName != null && playerIndex != null) {
+                        Gdx.app.log("GameServer", "Action from " + playerName + " (Index: " + playerIndex + "): " + action.action + " / " + action.amount);
+                        // In the next step, we will delegate this to gameLogic
+                    } else {
+                        Gdx.app.log("GameServer", "Unregistered player sent action: " + connection.getID());
+                    }
+                    // --- END NEW ---
                 }
             }
 
@@ -65,6 +93,7 @@ public class GameServer {
                 String playerName = connectedPlayers.remove(connection.getID());
                 if (playerName != null) {
                     Gdx.app.log("GameServer", "Player disconnected: " + playerName);
+                    playerNameToIndex.remove(playerName); // Keep the map clean
                     sendLobbyUpdate();
                 }
             }
@@ -88,10 +117,21 @@ public class GameServer {
         server.sendToAllTCP(update);
     }
 
+    // Modified to include player names in the StartGame packet
     public void sendStartGame() {
         NetworkPacket.StartGame start = new NetworkPacket.StartGame();
         start.maxPlayers = this.maxPlayers;
+        start.playerNames = new ArrayList<>(connectedPlayers.values()); // Include player names
         server.sendToAllTCP(start);
+
+        // --- NEW: Server-Side Player Index Mapping ---
+        ArrayList<String> playerNames = start.playerNames;
+        for (int i = 0; i < playerNames.size(); i++) {
+            playerNameToIndex.put(playerNames.get(i), i);
+        }
+        Gdx.app.log("GameServer", "Starting game with players: " + playerNames);
+        // Server-side logic initialization will be added here in the next step.
+        // --- END NEW ---
     }
 
     public void dispose() {
