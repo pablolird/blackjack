@@ -27,6 +27,7 @@ public class StartScreen implements Screen {
     private Table joinTable; // NEW TABLE FOR JOIN GAME
     private TextButtonStyle t1;
     private int depth = 0;
+    // test comment
 
     TextButton createButton(String text, Skin skin) {
         TextButton button = new TextButton(text, skin);
