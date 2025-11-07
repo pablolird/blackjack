@@ -3,6 +3,7 @@ package com.badlogic.blackjack;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.blackjack.network.GameClient; // NEW IMPORT
 
 /**
  * Main game class that manages screens.
@@ -12,9 +13,17 @@ public class Main extends Game {
     public static final int WORLD_WIDTH = 960;
     public static final int WORLD_HEIGHT = 540;
 
+    // --- NEW NETWORK CONSTANTS ---
+    public static final int TCP_PORT = 54555;
+    public static final int UDP_PORT = 54777;
+    // --- END NEW NETWORK CONSTANTS ---
+
     // These will be shared by all screens
     public SpriteBatch spriteBatch;
     public Assets assets;
+
+    // --- NEW FIELD FOR NETWORK CLEANUP ---
+    public GameClient gameClient;
 
     // The old 'private BlackjackGame game;' field has been removed.
 
@@ -37,14 +46,19 @@ public class Main extends Game {
         super.render();
     }
 
-    public void setScreen(GameScreen s, Object c) {
-        super.setScreen(s);
-    }
+    // REMOVED: public void setScreen(GameScreen s, Object c) { ... }
+    // The Game class already has a setScreen(Screen screen) method.
 
     @Override
     public void dispose() {
         // Dispose of shared assets and batch
         if (spriteBatch != null) spriteBatch.dispose();
+
+        // --- DISPOSE GAME CLIENT ---
+        if (gameClient != null) {
+            gameClient.dispose();
+        }
+        // --- END DISPOSE GAME CLIENT ---
 
         super.dispose();
     }

@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin; // <-- NEW IMPORT
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +23,8 @@ public class Assets {
     public Sound lockbetSFX;
     public Sound standSFX;
     public Music bgMusic1;
+
+    public Skin skin; // <-- NEW FIELD: Skin for UI elements
 
     public Assets() {}
 
@@ -58,5 +61,19 @@ public class Assets {
         lockbetSFX = Gdx.audio.newSound(Gdx.files.internal("lock.wav"));
         standSFX = Gdx.audio.newSound(Gdx.files.internal("STANDSFXV1.wav"));
         bgMusic1 = Gdx.audio.newMusic(Gdx.files.internal("SongOption3.ogg"));
+
+        try {
+            // Attempt to load from the 'ui' path first, as seen in your fallback logic
+            this.skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
+        } catch (Exception e) {
+            Gdx.app.error("Assets", "Failed to load uiskin.json from 'ui/uiskin.json'", e);
+            // Fallback to the 'skin/x1' path
+            try {
+                this.skin = new Skin(Gdx.files.internal("skin/x1/uiskin.json"));
+            } catch (Exception e2) {
+                Gdx.app.error("Assets", "Failed to load uiskin.json from 'skin/x1/uiskin.json'. UI may fail.", e2);
+                this.skin = new Skin(); // Provide an empty skin to prevent crash
+            }
+        }
     }
 }
