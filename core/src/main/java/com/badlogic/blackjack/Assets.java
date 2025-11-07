@@ -30,7 +30,7 @@ public class Assets {
     }
 
     public void loadFromFile() {
-        board = new Texture(Gdx.files.internal("BEST-BOARD-SO-FAR.png"));
+        board = new Texture(Gdx.files.internal("board.png"));
         // Set the filter for the board texture
 //        board.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
 
