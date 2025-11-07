@@ -1,9 +1,8 @@
 package com.badlogic.blackjack;
 import java.util.ArrayList;
 import java.util.List;
-
-enum GameState { STARTING, BETTING, DEALING_DEALER, DEALING_PLAYERS, PLAYER_TURN, ANIMATIONS_IN_PROGRESS, DEALER_TURN, RESOLVING_BETS,
-                 FINISHING_ROUND, GAME_OVER}
+import com.badlogic.blackjack.GameState;
+import com.badlogic.blackjack.GameStateListener;
 
 public class BlackjackLogic {
     private final Sequencer sequencer;
@@ -15,6 +14,8 @@ public class BlackjackLogic {
     GameState gameState;
     UI gameUI;
 
+
+    private GameStateListener stateListener;
 
     public BlackjackLogic(Sequencer sequencer, List<String> playerNames) {
         this.numPlayers = playerNames.size();
@@ -59,15 +60,40 @@ public class BlackjackLogic {
         this.current_playerIndex = 0;
     }
 
+    public GameState getGameState() {
+        return gameState;
+    }
+
+    public int getCurrentPlayerIndex() {
+        return current_playerIndex;
+    }
+
+    public List<Player> getPlayersList() {
+        return playersList;
+    }
+
+    public Dealer getDealer() {
+        return dealer;
+    }
+
+    public void setGameStateListener(GameStateListener listener) {
+        this.stateListener = listener;
+    }
+
+    private void notifyStateChanged() {
+        if (stateListener != null) {
+            stateListener.onGameStateChanged();
+        }
+    }
+
     public void nextPlayer() {
-        // SHOULD ONLY BE USED FOR HIT/STAND
         if (current_playerIndex==playersList.size()-1) {
-            // LAST PLAYER PRESSED STAND, GO TO NEXT GAME PHASE
             gameState = GameState.DEALER_TURN;
-            gameUI.showPlayerActionPanel(false);
+            if(gameUI != null) gameUI.showPlayerActionPanel(false); // Check for null
+            notifyStateChanged(); // NOTIFY
         }
         current_playerIndex=(current_playerIndex+1)%playersList.size();
-        gameUI.updateCurrentPlayerColor(playersList.get(current_playerIndex));
+        if(gameUI != null) gameUI.updateCurrentPlayerColor(playersList.get(current_playerIndex)); // Check for null
     }
 
 
@@ -83,26 +109,33 @@ public class BlackjackLogic {
     {
         Player currentPlayer = playersList.get(current_playerIndex);
         currentPlayer.addToBet(amount);
-        gameUI.updatePlayerBalance(currentPlayer); // Update UI to show new potential bet
+        if (gameUI != null) {
+            gameUI.updatePlayerBalance(currentPlayer); // Update UI to show new potential bet
+        }
     }
 
     public void playerLockInBet() {
         Player currentPlayer = playersList.get(current_playerIndex);
         if (currentPlayer.getCurrentBet() > 0) {
             currentPlayer.lockInBet();
-            gameUI.updatePlayerBalance(currentPlayer);
+            if(gameUI != null) gameUI.updatePlayerBalance(currentPlayer); // Check for null
+
             if (current_playerIndex < playersList.size() - 1)
             {
                 Player nextPlayer = playersList.get(current_playerIndex + 1);
-                gameUI.updateCurrentPlayerColor(nextPlayer);
+                if(gameUI != null) gameUI.updateCurrentPlayerColor(nextPlayer); // Check for null
                 current_playerIndex++;
+                notifyStateChanged(); // NOTIFY (Next player's turn to bet)
             }
             else
             {
                 current_playerIndex = 0;
                 gameState = GameState.DEALING_DEALER;
-                gameUI.showBettingPanel(false);
-                gameUI.updateCurrentPlayerColor(null);
+                if(gameUI != null) {
+                    gameUI.showBettingPanel(false);
+                    gameUI.updateCurrentPlayerColor(null);
+                }
+                notifyStateChanged(); // NOTIFY (Betting finished)
             }
         }
     }
@@ -153,15 +186,21 @@ public class BlackjackLogic {
                 int roundedReturn = (rawReturn / 10) * 10;
 
                 p.addBalance(roundedReturn);
-                gameUI.updatePlayerBalance(p);
+                if (gameUI != null) {
+                    gameUI.updatePlayerBalance(p);
+                }
             }
-            gameUI.updatePlayerScore(p);
+            if (gameUI != null) {
+                gameUI.updatePlayerScore(p);
+            }
         }
 
-        gameUI.updateDealerScore(dealer);
-        gameUI.showPlayerActionPanel(false);
+        if (gameUI != null) {
+            gameUI.updateDealerScore(dealer);
+            gameUI.showPlayerActionPanel(false);
+        }
 
-        sequencer.moveCardsToDeck(playersList, dealer);
+        if (sequencer != null) sequencer.moveCardsToDeck(playersList, dealer); // Check for null
 
         dealer.reset();
         for (Player p : playersList) {
@@ -172,6 +211,7 @@ public class BlackjackLogic {
         }
 
         gameState = GameState.FINISHING_ROUND;
+        notifyStateChanged(); // NOTIFY
     }
 
     public void dealInitialCards() {
@@ -197,17 +237,18 @@ public class BlackjackLogic {
     }
 
     public void hit() {
-        if (!gameState.equals(GameState.PLAYER_TURN) || sequencer.isBusy()) {
+        if (!gameState.equals(GameState.PLAYER_TURN) || (sequencer != null && sequencer.isBusy())) { // Check for null
             return;
         }
 
         Player p = playersList.get(current_playerIndex);
         p.addCard(deck.deal());
-        sequencer.createDealCardAction(p,current_playerIndex);
-        gameUI.updatePlayerScore(p);
+        if(sequencer != null) sequencer.createDealCardAction(p,current_playerIndex); // Check for null
+        if(gameUI != null) gameUI.updatePlayerScore(p); // Check for null
 
         if (p.totalValue()>21) {
             nextPlayer();
+            // We notify inside nextPlayer()
         }
     }
 
@@ -216,71 +257,113 @@ public class BlackjackLogic {
             case STARTING:
                 deck.reset();
                 playersList.removeIf(p -> !p.isActive());
-                gameUI.rebuildLayout(playersList);
+                if(gameUI != null) gameUI.rebuildLayout(playersList); // Check for null
                 if (playersList.isEmpty()) {
                     gameState = GameState.GAME_OVER; // Or a new "GAME_OVER" state
+                    notifyStateChanged(); // NOTIFY
                     return; // Stop processing
                 }
 
                 // Reset player index just in case the last player was removed
                 current_playerIndex = 0;
                 gameState = GameState.BETTING;
-                gameUI.showBettingPanel(true);
-                gameUI.setCurrentPlayer(playersList.get(current_playerIndex));
+                if(gameUI != null) {
+                    gameUI.showBettingPanel(true);
+                    gameUI.setCurrentPlayer(playersList.get(current_playerIndex));
+                }
+                notifyStateChanged(); // NOTIFY (Initial BETTING state)
                 break;
             case BETTING:
+                // Logic is now driven by playerLockInBet()
                 break;
             case DEALING_DEALER:
-                if(!sequencer.isBusy())
+                if(sequencer == null || !sequencer.isBusy()) // Check for null
                 {
                     dealer.addCard(deck.deal());
-                    sequencer.createDealCardToDealerAction(dealer);
-                    gameUI.updateDealerScore(dealer);
+                    if(sequencer != null) sequencer.createDealCardToDealerAction(dealer); // Check for null
+                    if(gameUI != null) gameUI.updateDealerScore(dealer); // Check for null
                     gameState = GameState.DEALING_PLAYERS;
+                    // No notify, flows into next state
                 }
                 break;
             case DEALING_PLAYERS:
-                gameUI.showPlayerActionPanel(false);
-                this.dealInitialCards();
+                if(gameUI != null) gameUI.showPlayerActionPanel(false); // Check for null
+
+                // --- MODIFIED dealInitialCards logic ---
+                if (sequencer != null && sequencer.isBusy()) {
+
+                    // --- FIX IS HERE ---
+                    // We must check if the index is valid *before* accessing anything with it.
+                    if (current_playerIndex < playersList.size()) {
+                        if(gameUI != null) gameUI.updatePlayerScore(playersList.get(current_playerIndex));
+
+                        // This check is now nested inside the safety check
+                        if (playersList.get(current_playerIndex).m_currentCards.size() > 1 ) {
+                            current_playerIndex++;
+                        }
+                    }
+                    // If index is out of bounds (meaning we just finished the last player),
+                    // we simply return and wait for the sequencer to finish.
+                    // The logic below will handle the state transition.
+                    return;
+                    // --- END FIX ---
+                }
+
+                if (current_playerIndex == playersList.size()) {
+                    current_playerIndex=0;
+                    gameState = GameState.ANIMATIONS_IN_PROGRESS;
+                    notifyStateChanged(); // NOTIFY
+                    return;
+                }
+
+                Player curentPlayer = playersList.get(current_playerIndex);
+                curentPlayer.addCard(deck.deal());
+                if(sequencer != null) sequencer.createDealCardAction(curentPlayer, current_playerIndex); // Check for null
+                // --- END MODIFIED ---
                 break;
             case ANIMATIONS_IN_PROGRESS:
-                if (!sequencer.isBusy()) {
+                if (sequencer == null || !sequencer.isBusy()) { // Check for null
                     gameState = GameState.PLAYER_TURN;
+                    notifyStateChanged(); // NOTIFY
                 }
                 break;
             case PLAYER_TURN:
-                if (!gameUI.ActionPanelIsVisible())
+                if (gameUI != null && !gameUI.ActionPanelIsVisible()) // Check for null
                 {
                     gameUI.showPlayerActionPanel(true);
                     gameUI.setCurrentPlayer(playersList.get(current_playerIndex));
                 }
                 break;
             case DEALER_TURN:
-                if(!sequencer.isBusy())
+                if(sequencer == null || !sequencer.isBusy()) // Check for null
                 {
                     if(dealer.totalValue() < 17)
                     {
                         dealer.addCard(deck.deal());
-                        sequencer.createDealCardToDealerAction(dealer);
-                        gameUI.updateDealerScore(dealer);
+                        if(sequencer != null) sequencer.createDealCardToDealerAction(dealer); // Check for null
+                        if(gameUI != null) gameUI.updateDealerScore(dealer); // Check for null
+                        // No notify, dealer might hit again
                     }
                     else
                     {
                         gameState = GameState.RESOLVING_BETS;
+                        notifyStateChanged(); // NOTIFY
                     }
                 }
                 break;
             case RESOLVING_BETS:
                 resolveBets();
+                // We notify inside resolveBets()
                 break;
             case FINISHING_ROUND:
-                if (!sequencer.isBusy()) {
-                    sequencer.clearCardEntities();
+                if (sequencer == null || !sequencer.isBusy()) { // Check for null
+                    if(sequencer != null) sequencer.clearCardEntities(); // Check for null
                     gameState = GameState.STARTING;
+                    notifyStateChanged(); // NOTIFY
                 }
                 break;
             case GAME_OVER:
-                gameUI.showGameOverMenu();
+                if(gameUI != null) gameUI.showGameOverMenu(); // Check for null
                 break;
         }
     }

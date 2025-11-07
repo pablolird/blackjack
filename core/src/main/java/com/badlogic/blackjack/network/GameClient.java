@@ -25,9 +25,7 @@ public class GameClient {
     public interface LobbyUpdateListener {
         void onLobbyUpdate(NetworkPacket.LobbyUpdate update);
         void onGameStart(NetworkPacket.StartGame start);
-        // --- NEW ---
         void onGameStateUpdate(NetworkPacket.GameStateUpdate update);
-        // --- END NEW ---
     }
 
     public GameClient(String playerName) {
@@ -41,11 +39,11 @@ public class GameClient {
         client.getKryo().register(NetworkPacket.RegisterPlayer.class);
         client.getKryo().register(NetworkPacket.LobbyUpdate.class);
         client.getKryo().register(NetworkPacket.StartGame.class);
-        // --- NEW REGISTRATIONS ---
-        client.getKryo().register(NetworkPacket.PlayerActionType.class); // Register the enum
+        client.getKryo().register(NetworkPacket.PlayerActionType.class);
         client.getKryo().register(NetworkPacket.PlayerAction.class);
         client.getKryo().register(NetworkPacket.GameStateUpdate.class);
-        // --- END NEW REGISTRATIONS ---
+        client.getKryo().register(NetworkPacket.CardInfo.class);
+        client.getKryo().register(NetworkPacket.PlayerInfo.class);
         client.getKryo().register(ArrayList.class);
     }
 

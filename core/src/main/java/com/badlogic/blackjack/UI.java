@@ -13,6 +13,9 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
+import com.badlogic.blackjack.network.GameClient;
+import com.badlogic.blackjack.network.NetworkPacket;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +30,7 @@ public class UI {
     private final Map<Player, Label> playerScoreLabels;
     private final Map<Player, Label> playerBalanceLabels;
     private final BlackjackLogic blackjackLogic;
+    private final GameClient gameClient;
     private boolean paused;
     private AudioManager audioManager;
     private final Get g;
@@ -44,6 +48,7 @@ public class UI {
         playerScoreLabels = new HashMap<>();
         playerBalanceLabels = new HashMap<>();
         this.audioManager = audioManager;
+        this.gameClient = game.gameClient;
 
         stage = new Stage(vp, sb);
         skin = new Skin(Gdx.files.internal("skin/x1/uiskin.json"));
@@ -62,15 +67,20 @@ public class UI {
         hitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                blackjackLogic.hit();
+                if (gameClient != null) {
+                    gameClient.sendAction(NetworkPacket.PlayerActionType.HIT);
+                }
             }
         });
 
         standButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                // --- MODIFIED: Send network command ---
+                if (gameClient != null) {
+                    gameClient.sendAction(NetworkPacket.PlayerActionType.STAND);
+                }
                 audioManager.playSound(SoundType.STAND, 1.0f);
-                blackjackLogic.stand();
             }
         });
 
@@ -92,7 +102,11 @@ public class UI {
         bet10Button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                blackjackLogic.playerAddToBet(10);
+                // --- MODIFIED: Send network command ---
+                if (gameClient != null) {
+                    gameClient.sendAction(NetworkPacket.PlayerActionType.ADD_TO_BET, 10);
+                }
+                // blackjackLogic.playerAddToBet(10); // <-- REMOVED
                 audioManager.playSound(SoundType.BET, 1.0f);
             }
         });
@@ -100,7 +114,10 @@ public class UI {
         bet50Button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                blackjackLogic.playerAddToBet(50);
+                // --- MODIFIED: Send network command ---
+                if (gameClient != null) {
+                    gameClient.sendAction(NetworkPacket.PlayerActionType.ADD_TO_BET, 50);
+                }
                 audioManager.playSound(SoundType.BET, 1.0f);
             }
         });
@@ -108,7 +125,10 @@ public class UI {
         bet100Button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                blackjackLogic.playerAddToBet(100);
+                // --- MODIFIED: Send network command ---
+                if (gameClient != null) {
+                    gameClient.sendAction(NetworkPacket.PlayerActionType.ADD_TO_BET, 100);
+                }
                 audioManager.playSound(SoundType.BET, 1.0f);
             }
         });
@@ -116,7 +136,10 @@ public class UI {
         confirmBetButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                blackjackLogic.playerLockInBet();
+                // --- MODIFIED: Send network command ---
+                if (gameClient != null) {
+                    gameClient.sendAction(NetworkPacket.PlayerActionType.LOCK_IN_BET);
+                }
                 audioManager.playSound(SoundType.LOCKBET, 0.65f);
             }
         });
