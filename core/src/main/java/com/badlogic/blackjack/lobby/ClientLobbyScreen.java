@@ -25,12 +25,14 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
     private Label roomNameLabel;
     private Label playerCounterLabel;
     private Label playersListLabel;
+    private final String playerName;
 
-    public ClientLobbyScreen(Main game, String ipAddress) {
+    public ClientLobbyScreen(Main game, String playerName, String ipAddress) {
         this.game = game;
         this.ipAddress = ipAddress;
         this.skin = game.assets.skin;
         this.stage = new Stage(new ScreenViewport());
+        this.playerName = playerName;
 
         Gdx.input.setInputProcessor(stage);
 
@@ -53,8 +55,7 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
         root.add(new Label("Waiting for host to start match...", skin)).pad(20).row();
 
         // --- Networking Setup ---
-        // For simplicity, hardcode a player name for the joining client
-        client = new GameClient("Guest_" + (int)(Math.random() * 100));
+        client = new GameClient(playerName);
         client.addLobbyUpdateListener(this);
         client.connect(ipAddress);
         game.gameClient = client; // Store client for cleanup

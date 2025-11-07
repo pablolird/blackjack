@@ -87,6 +87,16 @@ public class StartScreen implements Screen {
         Table joinTable = new Table();
         joinTable.setFillParent(true);
 
+        // --- NEW ROW FOR PLAYER NAME ---
+        joinTable.row().padBottom(10f);
+        Label playerNameLabel = new Label("Your Name:", skin);
+        playerNameLabel.setWidth(100);
+        joinTable.add(playerNameLabel).align(Align.left).fill();
+
+        TextField playerNameField = new TextField("Guest", skin);
+        joinTable.add(playerNameField).fill();
+        // --- END NEW ROW ---
+
         joinTable.row().padBottom(10f);
         Label ipLabel = new Label("Host IP Address:", skin);
         ipLabel.setWidth(100);
@@ -117,14 +127,14 @@ public class StartScreen implements Screen {
             public void changed(ChangeEvent event, Actor actor) {
                 // Transition to ClientLobbyScreen and start connection attempt
                 String ipAddress = ipAddressField.getText();
-                game.setScreen(new ClientLobbyScreen(game, ipAddress));
+                String playerName = playerNameField.getText(); // GET THE JOINING PLAYER NAME
+                game.setScreen(new ClientLobbyScreen(game, playerName, ipAddress)); // PASS PLAYER NAME
                 dispose();
             }
         });
 
         return joinTable;
     }
-    // --- END NEW METHOD ---
 
     Table multiplayerScreenLayout(Main game) {
         Table startTable = new Table();
@@ -201,11 +211,20 @@ public class StartScreen implements Screen {
         TextField roomNameField = new TextField("My Blackjack Room",skin);
         SelectBox<Integer> maxPlayersSelectBox = new SelectBox<>(skin);
         maxPlayersSelectBox.setItems(2,3,4,5,6,7);
+        // --- NEW: Player Name Field ---
+        TextField playerNameField = new TextField("Host", skin);
 
         hostTable.row().padBottom(10f);
         Label roomName = new Label("Room name:", skin);
         hostTable.add(roomName).align(Align.left).fill();
         hostTable.add(roomNameField); // USE THE TEXT FIELD
+
+        // --- NEW ROW FOR PLAYER NAME ---
+        hostTable.row().padBottom(10f);
+        Label playerNameLabel = new Label("Your Name:", skin);
+        hostTable.add(playerNameLabel).align(Align.left).fill();
+        hostTable.add(playerNameField).fill();
+        // --- END NEW ROW ---
 
         hostTable.row().padBottom(10f);
         Label maxPlayersLabel = new Label("Max number of players: ", skin);
@@ -234,15 +253,16 @@ public class StartScreen implements Screen {
             }
         });
 
-        // --- CREATE GAME BUTTON LISTENER (NEW) ---
+        // --- CREATE GAME BUTTON LISTENER (MODIFIED) ---
         createGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 String name = roomNameField.getText();
                 int max = maxPlayersSelectBox.getSelected();
+                String hostName = playerNameField.getText(); // GET THE HOST NAME
 
                 // Transition to HostLobbyScreen and start the server/client
-                game.setScreen(new HostLobbyScreen(game, name, max));
+                game.setScreen(new HostLobbyScreen(game, hostName, name, max)); // PASS HOST NAME
                 dispose(); // Dispose this screen
             }
         });

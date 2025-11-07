@@ -27,6 +27,7 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
     private GameClient client;
     private final String roomName;
     private final int maxPlayers;
+    private final String hostPlayerName; // NEW FIELD
 
     private Label roomNameLabel;
     private Label playerCounterLabel;
@@ -34,11 +35,13 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
     private TextButton startGameButton;
     private Label hostIPLabel;
 
-    public HostLobbyScreen(Main game, String roomName, int maxPlayers) {
+    public HostLobbyScreen(Main game, String hostPlayerName, String roomName, int maxPlayers) {
         this.game = game;
         this.roomName = roomName;
         this.maxPlayers = maxPlayers;
         this.skin = game.assets.skin; // Assuming a skin is available via Main/Assets
+        this.hostPlayerName = hostPlayerName; // INITIALIZE NEW FIELD
+
         this.stage = new Stage(new ScreenViewport());
 
         Gdx.input.setInputProcessor(stage);
@@ -74,7 +77,7 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
             hostIPLabel.setText("Host IP: " + getLocalIP());
 
             // 2. Start the Client (Host is also a client)
-            client = new GameClient("Host"); // Host name is arbitrary here
+            client = new GameClient(hostPlayerName); // USE THE HOST NAME
             client.addLobbyUpdateListener(this);
             // Host connects to their own local server
             client.connect("127.0.0.1");
