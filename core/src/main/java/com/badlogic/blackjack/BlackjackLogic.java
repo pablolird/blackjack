@@ -27,7 +27,7 @@ public class BlackjackLogic {
 
 
         for (int i = 0; i < n; i++) {
-            Player p = new Player("player", 100);
+            Player p = new Player("player", i, 100);
 
             playersList.add(p);
         }
@@ -79,7 +79,6 @@ public class BlackjackLogic {
                 current_playerIndex = 0;
                 gameState = GameState.DEALING_DEALER;
                 gameUI.showBettingPanel(false);
-                gameUI.updateCurrentPlayerColor(null);
             }
         }
     }
@@ -193,7 +192,7 @@ public class BlackjackLogic {
             case STARTING:
                 deck.reset();
                 playersList.removeIf(p -> !p.isActive());
-                gameUI.rebuildLayout(playersList);
+                gameUI.rebuildLayout(playersList, dealer);
                 if (playersList.isEmpty()) {
                     gameState = GameState.GAME_OVER; // Or a new "GAME_OVER" state
                     return; // Stop processing

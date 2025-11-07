@@ -2,11 +2,13 @@ package com.badlogic.blackjack;
 
 public class Player extends Dealer {
     private final String m_name;
+    private final int m_id;
     private int m_balance;
     private int m_currentBet;
     private boolean m_active = true;
 
-    public Player(String name, int balance) {
+    public Player(String name, int id, int balance) {
+        this.m_id = id;
         this.m_name = name;
         this.m_balance = balance;
         this.m_currentBet = 0;
@@ -57,5 +59,9 @@ public class Player extends Dealer {
         this.m_currentCards.clear();
         this.m_currentBet = 0;
         this.m_active = true;
+    }
+
+    public int getID() {
+        return m_id;
     }
 }
