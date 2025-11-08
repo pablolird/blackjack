@@ -237,8 +237,11 @@ public class GameServer implements GameStateListener {
                 break;
             case BETTING:
             case PLAYER_TURN:
+                // These states require player input, but we still need to update for auto-action timer
+                gameLogic.update(delta);
+                break;
             case GAME_OVER:
-                // These states require player input or are final, so we stop ticking.
+                // Final state, stop ticking
                 break;
         }
     }
