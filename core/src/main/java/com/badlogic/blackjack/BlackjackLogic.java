@@ -14,6 +14,8 @@ public class BlackjackLogic {
     GameState gameState;
     UI gameUI;
     private boolean betsResolved = false;
+    private float resolvingBetsDelay = 0f;
+    private static final float RESOLVING_BETS_DELAY_TIME = 2.0f; // 2 second delay to view results
 
     private GameStateListener stateListener;
 
@@ -200,13 +202,11 @@ public class BlackjackLogic {
             gameUI.showPlayerActionPanel(false);
         }
 
-        // Start animation to return cards to deck
-        if (sequencer != null) {
-            sequencer.moveCardsToDeck(playersList, dealer);
-        }
+        // Don't start card return animation here - wait for delay in RESOLVING_BETS state
+        // The state machine will handle the delay and animation
 
         // Stay in RESOLVING_BETS - the state machine will transition to FINISHING_ROUND
-        // after the animation delay (handled by server) or when sequencer is done (client)
+        // after the delay and animation
         notifyStateChanged(); // NOTIFY
     }
 
@@ -410,15 +410,12 @@ public class BlackjackLogic {
                 // Resolve bets only once when entering this state
                 if (!betsResolved) {
                     // Only resolve bets on server (where sequencer is null)
-                    // Clients receive updated balances from server and just need to start animation
+                    // Clients receive updated balances from server
                     if (sequencer == null) {
                         // Server: calculate and update balances
                         resolveBets();
                     } else {
-                        // Client: balances already synced from server, just start animation
-                        // Start animation to return cards to deck
-                        sequencer.moveCardsToDeck(playersList, dealer);
-                        // Update UI scores
+                        // Client: balances already synced from server, just update UI
                         if (gameUI != null) {
                             gameUI.updateDealerScore(dealer);
                             gameUI.showPlayerActionPanel(false);
@@ -428,6 +425,19 @@ public class BlackjackLogic {
                         }
                     }
                     betsResolved = true;
+                    resolvingBetsDelay = RESOLVING_BETS_DELAY_TIME; // Start 2 second delay
+                }
+                
+                // Wait for delay to complete before starting card return animation
+                if (resolvingBetsDelay > 0) {
+                    resolvingBetsDelay -= delta;
+                    if (resolvingBetsDelay <= 0) {
+                        // Delay complete, start card return animation
+                        if (sequencer != null) {
+                            sequencer.moveCardsToDeck(playersList, dealer);
+                        }
+                    }
+                    return; // Wait for delay
                 }
                 
                 // Wait for animation to complete before transitioning
@@ -435,6 +445,7 @@ public class BlackjackLogic {
                     // On server (sequencer is null) or when animation is done, transition to FINISHING_ROUND
                     gameState = GameState.FINISHING_ROUND;
                     betsResolved = false; // Reset flag for next round
+                    resolvingBetsDelay = 0f; // Reset delay
                     notifyStateChanged();
                 }
                 break;
@@ -452,11 +463,36 @@ public class BlackjackLogic {
                         }
                     }
                     
+                    // Remove inactive players immediately (not just in STARTING)
+                    int playersBeforeRemoval = playersList.size();
+                    int oldCurrentIndex = current_playerIndex;
+                    playersList.removeIf(p -> !p.isActive());
+                    int playersAfterRemoval = playersList.size();
+                    
+                    // Adjust current player index if needed
+                    if (playersAfterRemoval < playersBeforeRemoval) {
+                        // Players were removed, adjust index
+                        // If current index is out of bounds, reset to 0
+                        if (current_playerIndex >= playersList.size()) {
+                            current_playerIndex = 0;
+                        }
+                        // If players before the current player were removed, the index might need adjustment
+                        // Actually, since we're removing from the list, indices shift automatically
+                        // We just need to make sure we're not out of bounds
+                        if (current_playerIndex >= playersList.size()) {
+                            current_playerIndex = Math.max(0, playersList.size() - 1);
+                        }
+                    }
+                    
                     // Update UI scores to reflect cleared state
                     if (gameUI != null) {
                         gameUI.updateDealerScore(dealer);
                         for (Player p : playersList) {
                             gameUI.updatePlayerScore(p);
+                        }
+                        // Rebuild layout if players were removed
+                        if (playersAfterRemoval < playersBeforeRemoval) {
+                            gameUI.rebuildLayout(playersList);
                         }
                     }
                     

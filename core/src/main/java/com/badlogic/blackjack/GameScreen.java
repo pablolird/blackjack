@@ -184,8 +184,11 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
         // --- THIS IS THE ENTIRE CLIENT-SIDE IMPLEMENTATION ---
 
-        // 1. Update all local player data (balances, bets) from the packet
+        // 1. Update all local player data (balances, bets, active status) from the packet
+        List<String> serverPlayerNames = new ArrayList<>();
         for (PlayerInfo serverPlayer : update.players) {
+            serverPlayerNames.add(serverPlayer.name);
+            
             // Find the matching local player
             Player localPlayer = null;
             for (Player p : logic.getPlayersList()) {
@@ -203,6 +206,37 @@ public class GameScreen implements Screen, LobbyUpdateListener {
                 // Update the UI with this new data
                 ui.updatePlayerBalance(localPlayer);
             }
+        }
+        
+        // Remove players that are no longer on the server (they were removed due to zero balance)
+        boolean playersRemoved = false;
+        List<Player> playersToRemove = new ArrayList<>();
+        for (Player localPlayer : logic.getPlayersList()) {
+            // Check if player is not in server list (server only sends active players)
+            boolean foundOnServer = serverPlayerNames.contains(localPlayer.getName());
+            if (!foundOnServer) {
+                playersToRemove.add(localPlayer);
+                playersRemoved = true;
+            }
+        }
+        
+        // Remove players that are no longer on the server
+        if (playersRemoved) {
+            int playersBeforeRemoval = logic.getPlayersList().size();
+            logic.getPlayersList().removeAll(playersToRemove);
+            int playersAfterRemoval = logic.getPlayersList().size();
+            
+            // Adjust current player index if needed
+            int currentIndex = logic.getCurrentPlayerIndex();
+            if (currentIndex >= playersAfterRemoval) {
+                // Current player was removed or index is out of bounds, reset to 0
+                // Note: We can't directly set the index, but the server will handle this
+            }
+            
+            // Rebuild UI layout to reflect player removal
+            ui.rebuildLayout(logic.getPlayersList());
+            
+            Gdx.app.log("GameScreen", "Removed " + (playersBeforeRemoval - playersAfterRemoval) + " player(s) with zero balance");
         }
 
         // 2. Update the UI panels based on the game state
@@ -255,17 +289,8 @@ public class GameScreen implements Screen, LobbyUpdateListener {
             ui.updateCurrentPlayerColor(null); // No player is active, unhighlight all
         }
 
-        // 4. Handle RESOLVING_BETS state - trigger card return animation
-        if (state == GameState.RESOLVING_BETS) {
-            // Server has resolved bets, start animation to return cards to deck (only once)
-            if (!cardReturnAnimationStarted) {
-                Dealer localDealer = logic.getDealer();
-                if (!localDealer.m_currentCards.isEmpty()) {
-                    sequencer.moveCardsToDeck(logic.getPlayersList(), localDealer);
-                    cardReturnAnimationStarted = true;
-                }
-            }
-        }
+        // 4. Handle RESOLVING_BETS state - animation is started by BlackjackLogic after delay
+        // The delay allows players to see the dealer's cards and bet results
 
         // 5. Handle FINISHING_ROUND state - clear cards when server indicates they're cleared
         if (state == GameState.FINISHING_ROUND) {

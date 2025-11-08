@@ -78,10 +78,14 @@ public class GameServer implements GameStateListener {
                     // --- MODIFIED: Handle Game Actions ---
                     if (gameLogic == null) return; // Ignore if game hasn't started
 
+                    // Rebuild player index map to ensure it's up-to-date (players may have been removed)
+                    rebuildPlayerIndexMap();
+
                     NetworkPacket.PlayerAction action = (NetworkPacket.PlayerAction) object;
                     String playerName = connectedPlayers.get(connection.getID());
                     Integer playerIndex = playerNameToIndex.get(playerName);
 
+                    // Check if player exists and is still in the game
                     if (playerName != null && playerIndex != null) {
 
                         // --- SERVER-SIDE VALIDATION ---
@@ -120,7 +124,11 @@ public class GameServer implements GameStateListener {
                         sendGameStateUpdate();
 
                     } else {
-                        Gdx.app.log("GameServer", "Unregistered player sent action: " + connection.getID());
+                        if (playerName != null && playerIndex == null) {
+                            Gdx.app.log("GameServer", "Player " + playerName + " was removed from game (zero balance) - ignoring action");
+                        } else {
+                            Gdx.app.log("GameServer", "Unregistered player sent action: " + connection.getID());
+                        }
                     }
                     // --- END MODIFIED ---
                 }
@@ -191,10 +199,10 @@ public class GameServer implements GameStateListener {
         if (state == GameState.ANIMATIONS_IN_PROGRESS || 
             state == GameState.DEALING_DEALER || 
             state == GameState.DEALING_PLAYERS ||
-            state == GameState.RESOLVING_BETS ||
             state == GameState.FINISHING_ROUND) {
             animationTimer = ANIMATION_DELAY;
         }
+        // RESOLVING_BETS has its own delay (2 seconds) handled in BlackjackLogic
     }
     
     /**
@@ -235,12 +243,29 @@ public class GameServer implements GameStateListener {
         }
     }
 
+    /**
+     * Rebuilds the playerNameToIndex map based on current player list.
+     * Should be called whenever players are removed to keep indices in sync.
+     */
+    private void rebuildPlayerIndexMap() {
+        playerNameToIndex.clear();
+        List<Player> players = gameLogic.getPlayersList();
+        for (int i = 0; i < players.size(); i++) {
+            playerNameToIndex.put(players.get(i).getName(), i);
+        }
+        Gdx.app.log("GameServer", "Rebuilt player index map: " + playerNameToIndex);
+    }
+
     public void sendGameStateUpdate() {
         if (gameLogic == null) return;
 
         NetworkPacket.GameStateUpdate update = new NetworkPacket.GameStateUpdate();
         // --- MODIFIED ---
         update.currentGameState = gameLogic.getGameState().name();
+
+        // Rebuild player index map to ensure it's in sync with current player list
+        // This is important when players are removed
+        rebuildPlayerIndexMap();
 
         // Determine current player for turn-based phases
         // --- MODIFIED ---
@@ -278,10 +303,15 @@ public class GameServer implements GameStateListener {
             update.dealerCards.add(info);
         }
 
-        // 2. Player States
+        // 2. Player States - only send active players
         update.players = new ArrayList<>();
         // --- MODIFIED ---
         for (Player p : gameLogic.getPlayersList()) {
+            // Only send active players
+            if (!p.isActive()) {
+                continue;
+            }
+            
             NetworkPacket.PlayerInfo pInfo = new NetworkPacket.PlayerInfo();
             pInfo.name = p.getName();
             pInfo.balance = p.getBalance();
