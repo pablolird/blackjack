@@ -614,7 +614,11 @@ public class BlackjackLogic {
                 }
                 break;
             case GAME_OVER:
-                if(gameUI != null) gameUI.showGameOverMenu(); // Check for null
+                if(gameUI != null) {
+                    // Pass isHost flag - sequencer is null on server (host), not null on clients
+                    boolean isHost = (sequencer == null);
+                    gameUI.showGameOverMenu(isHost);
+                }
                 break;
         }
     }

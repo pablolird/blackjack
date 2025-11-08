@@ -27,6 +27,7 @@ public class UI {
     private final Table bettingActionTable;
     private final Window pauseMenu;
     private final Window gameOverMenu;
+    private final Window gameOverWaitingMenu; // For non-host players
     private final Map<Player, Label> playerScoreLabels;
     private final Map<Player, Label> playerBalanceLabels;
     private final BlackjackLogic blackjackLogic;
@@ -156,10 +157,6 @@ public class UI {
         
         TextButton exitMatchButton = new TextButton("Exit Match", skin);
         pauseMenu.add(exitMatchButton);
-        pauseMenu.row();
-        
-        TextButton quitButton = new TextButton("Quit Game", skin);
-        pauseMenu.add(quitButton);
         pauseMenu.pack(); // Size the window to its contents
         pauseMenu.setPosition(stage.getWidth() / 2 - pauseMenu.getWidth() / 2, stage.getHeight() / 2 - pauseMenu.getHeight() / 2);
         stage.addActor(pauseMenu);
@@ -171,39 +168,68 @@ public class UI {
             public void changed(ChangeEvent event, Actor actor) {
                 if (gameClient != null && game.exitMatchCallback != null) {
                     game.exitMatchCallback.onExitMatch();
+                } else {
+                    // Local game, just return to start screen
+                    game.setScreen(new StartScreen(game));
+                    dispose();
                 }
             }
         });
 
         buildLayout(bl.playersList);
 
-        // 4. Build the Close Menu (initially hidden too)
+        // 4. Build the Game Over Menu for Host (with restart and exit options)
         gameOverMenu = new Window("Game Over", skin);
         gameOverMenu.pad(20);
         gameOverMenu.padTop(50);
-        gameOverMenu.add(quitButton);
-
+        
+        TextButton restartMatchButton = new TextButton("Restart Match", skin);
+        gameOverMenu.add(restartMatchButton).expand().pad(10);
+        
         gameOverMenu.row();
-        TextButton restartButton = new TextButton("Restart Game", skin);
-        gameOverMenu.add(restartButton).expand();
+        TextButton exitButton = new TextButton("Exit", skin);
+        gameOverMenu.add(exitButton).expand().pad(10);
+        
         gameOverMenu.pack(); // Size the window to its contents
-        gameOverMenu.setPosition(stage.getWidth() / 2 - pauseMenu.getWidth() / 2, stage.getHeight() / 2 - pauseMenu.getHeight() / 2);
+        gameOverMenu.setPosition(stage.getWidth() / 2 - gameOverMenu.getWidth() / 2, stage.getHeight() / 2 - gameOverMenu.getHeight() / 2);
         stage.addActor(gameOverMenu);
         gameOverMenu.setVisible(false); // Hide it by default
 
-        quitButton.addListener(new ChangeListener() {
+        // 5. Build the Game Over Waiting Menu for Non-Host players
+        gameOverWaitingMenu = new Window("Game Over", skin);
+        gameOverWaitingMenu.pad(20);
+        gameOverWaitingMenu.padTop(50);
+        Label waitingLabel = new Label("Waiting for host...", skin);
+        waitingLabel.setAlignment(Align.center);
+        gameOverWaitingMenu.add(waitingLabel).expand().pad(20);
+        gameOverWaitingMenu.pack();
+        gameOverWaitingMenu.setPosition(stage.getWidth() / 2 - gameOverWaitingMenu.getWidth() / 2, stage.getHeight() / 2 - gameOverWaitingMenu.getHeight() / 2);
+        stage.addActor(gameOverWaitingMenu);
+        gameOverWaitingMenu.setVisible(false); // Hide it by default
+
+        exitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.setScreen(new StartScreen(game));
-                dispose(); // Dispose this screen
+                if (gameClient != null && game.exitMatchCallback != null) {
+                    game.exitMatchCallback.onExitMatch();
+                } else {
+                    game.setScreen(new StartScreen(game));
+                    dispose(); // Dispose this screen
+                }
             }
         });
 
-        restartButton.addListener(new ChangeListener() {
+        restartMatchButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.setScreen(new GameScreen(game, bl.numPlayers));
-                dispose(); // Dispose this screen
+                // Send restart request to server (only host can do this)
+                if (gameClient != null && game.restartMatchCallback != null) {
+                    game.restartMatchCallback.onRestartMatch();
+                } else {
+                    // Local game, just restart
+                    game.setScreen(new GameScreen(game, bl.numPlayers));
+                    dispose(); // Dispose this screen
+                }
             }
         });
     }
@@ -359,7 +385,13 @@ public class UI {
         pauseMenu.setVisible(paused);
     }
 
-    public void showGameOverMenu() {
-        gameOverMenu.setVisible(true);
+    public void showGameOverMenu(boolean isHost) {
+        if (isHost) {
+            gameOverMenu.setVisible(true);
+            gameOverWaitingMenu.setVisible(false);
+        } else {
+            gameOverMenu.setVisible(false);
+            gameOverWaitingMenu.setVisible(true);
+        }
     }
 }

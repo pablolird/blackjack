@@ -54,6 +54,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     private boolean cardReturnAnimationStarted = false;
     private float resolvingBetsDelay = 0f;
     private static final float RESOLVING_BETS_DELAY_TIME = 2.0f; // 2 second delay to view results
+    private boolean isRestarting = false; // Flag to prevent multiple restarts
 
     public GameScreen(Main game, boolean isHost, List<String> playerNames) {
         this.game = game;
@@ -89,17 +90,39 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         
         // Set up exit match callback
         game.exitMatchCallback = this::handleExitMatch;
+        
+        // Set up restart match callback
+        game.restartMatchCallback = this::handleRestartMatch;
+    }
+    
+    private void handleRestartMatch() {
+        if (isHost && game.gameClient != null) {
+            // Host sends restart request to server
+            game.gameClient.sendRestartMatchRequest();
+        }
     }
     
     private void handleExitMatch() {
         if (game.gameClient != null) {
             // Send exit match request to server
             game.gameClient.sendExitMatchRequest();
-        } else {
-            // Local game, just return to start screen
-            game.setScreen(new StartScreen(game));
-            dispose();
+            
+            // Disconnect the client after sending the request
+            // The server will handle closing the connection
+            // We'll disconnect here to ensure clean exit
+            game.gameClient.dispose();
+            game.gameClient = null;
         }
+        
+        // If host, stop the server
+        if (isHost && game.gameServer != null) {
+            game.gameServer.dispose();
+            game.gameServer = null;
+        }
+        
+        // Return to start screen
+        game.setScreen(new StartScreen(game));
+        dispose();
     }
 
     // --- Overload for existing local game calls, passing dummy values ---
@@ -170,6 +193,12 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     public void dispose() {
         // IMPORTANT: Do NOT dispose of shared assets or SpriteBatch here
         // Only dispose of things created *by this screen*
+        
+        // Remove listener to prevent duplicate handling of network events
+        if (game.gameClient != null) {
+            game.gameClient.removeLobbyUpdateListener(this);
+        }
+        
         ui.dispose();
     }
 
@@ -205,8 +234,40 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     }
     
     @Override
+    public void onRestartMatch(NetworkPacket.RestartMatchResponse response) {
+        if (isRestarting) {
+            Gdx.app.log("GameScreen", "Already restarting, ignoring duplicate restart match response");
+            return;
+        }
+        
+        isRestarting = true;
+        Gdx.app.log("GameScreen", "Received restart match response with players: " + response.playerNames);
+        
+        // Remove listener before disposing to prevent duplicate handling
+        if (game.gameClient != null) {
+            game.gameClient.removeLobbyUpdateListener(this);
+        }
+        
+        // Restart the game with the same players
+        game.setScreen(new GameScreen(game, isHost, response.playerNames));
+        dispose();
+    }
+    
+    @Override
     public void onExitMatch(NetworkPacket.ExitMatchResponse response) {
         Gdx.app.log("GameScreen", "Received exit match response: hostExited=" + response.hostExited + ", player=" + response.exitedPlayerName);
+        
+        // Disconnect client if still connected
+        if (game.gameClient != null) {
+            game.gameClient.dispose();
+            game.gameClient = null;
+        }
+        
+        // If host, stop the server
+        if (isHost && game.gameServer != null) {
+            game.gameServer.dispose();
+            game.gameServer = null;
+        }
         
         // Return to start screen
         game.setScreen(new StartScreen(game));
@@ -284,6 +345,12 @@ public class GameScreen implements Screen, LobbyUpdateListener {
             case PLAYER_TURN:
                 ui.showBettingPanel(false);
                 ui.showPlayerActionPanel(true);
+                break;
+            case GAME_OVER:
+                // Show game over menu on clients when GAME_OVER state is received
+                ui.showGameOverMenu(isHost);
+                ui.showBettingPanel(false);
+                ui.showPlayerActionPanel(false);
                 break;
             default:
                 // Hide both panels during animations, dealing, etc.

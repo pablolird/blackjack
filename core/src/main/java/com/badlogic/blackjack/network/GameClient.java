@@ -27,6 +27,7 @@ public class GameClient {
         void onGameStart(NetworkPacket.StartGame start);
         void onGameStateUpdate(NetworkPacket.GameStateUpdate update);
         void onExitMatch(NetworkPacket.ExitMatchResponse response);
+        void onRestartMatch(NetworkPacket.RestartMatchResponse response);
     }
 
     public GameClient(String playerName) {
@@ -52,6 +53,8 @@ public class GameClient {
         client.getKryo().register(NetworkPacket.PlayerAction.class);
         client.getKryo().register(NetworkPacket.ExitMatchRequest.class);
         client.getKryo().register(NetworkPacket.ExitMatchResponse.class);
+        client.getKryo().register(NetworkPacket.RestartMatchRequest.class);
+        client.getKryo().register(NetworkPacket.RestartMatchResponse.class);
         client.getKryo().register(NetworkPacket.GameStateUpdate.class);
     }
 
@@ -90,6 +93,13 @@ public class GameClient {
                             listener.onExitMatch(response);
                         }
                     });
+                } else if (object instanceof NetworkPacket.RestartMatchResponse) {
+                    final NetworkPacket.RestartMatchResponse response = (NetworkPacket.RestartMatchResponse) object;
+                    Gdx.app.postRunnable(() -> {
+                        for (LobbyUpdateListener listener : listeners) {
+                            listener.onRestartMatch(response);
+                        }
+                    });
                 }
             }
 
@@ -105,6 +115,10 @@ public class GameClient {
 
     public void addLobbyUpdateListener(LobbyUpdateListener listener) {
         listeners.add(listener);
+    }
+    
+    public void removeLobbyUpdateListener(LobbyUpdateListener listener) {
+        listeners.removeValue(listener, true);
     }
 
     // --- NEW: Helper method for sending actions ---
@@ -125,6 +139,12 @@ public class GameClient {
         request.playerName = this.playerName;
         client.sendTCP(request);
         Gdx.app.log("GameClient", "Sent exit match request");
+    }
+    
+    public void sendRestartMatchRequest() {
+        NetworkPacket.RestartMatchRequest request = new NetworkPacket.RestartMatchRequest();
+        client.sendTCP(request);
+        Gdx.app.log("GameClient", "Sent restart match request");
     }
 
     /**

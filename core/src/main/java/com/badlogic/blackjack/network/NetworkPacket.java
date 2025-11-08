@@ -104,4 +104,19 @@ public class NetworkPacket {
         public boolean hostExited; // true if host exited, false if non-host exited
         public String exitedPlayerName;
     }
+    
+    /**
+     * Sent from the Host to the Server to request restarting the match.
+     */
+    public static class RestartMatchRequest {
+        // Empty - host just sends this to restart
+    }
+    
+    /**
+     * Sent from the Server to all Clients to notify them to restart the match.
+     * Contains the list of players who will participate in the new match.
+     */
+    public static class RestartMatchResponse {
+        public ArrayList<String> playerNames; // List of players for the new match
+    }
 }

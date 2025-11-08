@@ -33,6 +33,12 @@ public class Main extends Game {
         void onExitMatch();
     }
     public ExitMatchCallback exitMatchCallback;
+    
+    // Restart match callback interface
+    public interface RestartMatchCallback {
+        void onRestartMatch();
+    }
+    public RestartMatchCallback restartMatchCallback;
 
     // The old 'private BlackjackGame game;' field has been removed.
 

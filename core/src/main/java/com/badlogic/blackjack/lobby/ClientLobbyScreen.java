@@ -102,6 +102,14 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
         game.setScreen(new com.badlogic.blackjack.StartScreen(game));
         dispose();
     }
+    
+    @Override
+    public void onRestartMatch(NetworkPacket.RestartMatchResponse response) {
+        // Restart match - transition to game screen with the same players
+        Gdx.app.log("ClientLobbyScreen", "Received restart match response - starting game");
+        game.setScreen(new com.badlogic.blackjack.GameScreen(game, false, response.playerNames));
+        dispose();
+    }
 
     @Override
     public void show() { }

@@ -59,6 +59,8 @@ public class GameServer implements GameStateListener {
         server.getKryo().register(NetworkPacket.PlayerAction.class);
         server.getKryo().register(NetworkPacket.ExitMatchRequest.class);
         server.getKryo().register(NetworkPacket.ExitMatchResponse.class);
+        server.getKryo().register(NetworkPacket.RestartMatchRequest.class);
+        server.getKryo().register(NetworkPacket.RestartMatchResponse.class);
         server.getKryo().register(NetworkPacket.GameStateUpdate.class);
     }
 
@@ -92,6 +94,13 @@ public class GameServer implements GameStateListener {
                     String playerName = connectedPlayers.get(connection.getID());
                     if (playerName != null && playerName.equals(request.playerName)) {
                         handleExitMatchRequest(playerName, connection);
+                    }
+                } else if (object instanceof NetworkPacket.RestartMatchRequest) {
+                    NetworkPacket.RestartMatchRequest request = (NetworkPacket.RestartMatchRequest) object;
+                    String playerName = connectedPlayers.get(connection.getID());
+                    // Only host can restart
+                    if (playerName != null && playerName.equals(hostPlayerName)) {
+                        handleRestartMatchRequest();
                     }
                 } else if (object instanceof NetworkPacket.PlayerAction) {
                     // --- MODIFIED: Handle Game Actions ---
@@ -370,20 +379,26 @@ public class GameServer implements GameStateListener {
         boolean isHost = playerName.equals(hostPlayerName);
         
         if (isHost) {
-            // Host exited - send exit response to all clients
-            Gdx.app.log("GameServer", "Host " + playerName + " exited - ending match for all players");
+            // Host exited - send exit response to all clients and stop server
+            Gdx.app.log("GameServer", "Host " + playerName + " exited - ending match for all players and stopping server");
             NetworkPacket.ExitMatchResponse response = new NetworkPacket.ExitMatchResponse();
             response.hostExited = true;
             response.exitedPlayerName = playerName;
             server.sendToAllTCP(response);
-        } else {
-            // Non-host exited - queue for removal at safe phase
-            Gdx.app.log("GameServer", "Non-host " + playerName + " exited - queuing for removal");
-            if (!queuedPlayerRemovals.contains(playerName)) {
-                queuedPlayerRemovals.add(playerName);
+            
+            // Close all connections
+            for (Connection conn : server.getConnections()) {
+                conn.close();
             }
             
-            // Send exit response only to the exiting player
+            // Stop the server
+            server.stop();
+            Gdx.app.log("GameServer", "Server stopped after host exit");
+        } else {
+            // Non-host exited - disconnect them immediately
+            Gdx.app.log("GameServer", "Non-host " + playerName + " exited - disconnecting");
+            
+            // Send exit response before closing connection
             NetworkPacket.ExitMatchResponse response = new NetworkPacket.ExitMatchResponse();
             response.hostExited = false;
             response.exitedPlayerName = playerName;
@@ -393,9 +408,17 @@ public class GameServer implements GameStateListener {
             connectedPlayers.remove(connection.getID());
             playerNameToIndex.remove(playerName);
             
+            // Close the connection
+            connection.close();
+            
             // If game hasn't started, update lobby
             if (gameLogic == null) {
                 sendLobbyUpdate();
+            } else {
+                // If game is in progress, queue for removal at safe phase
+                if (!queuedPlayerRemovals.contains(playerName)) {
+                    queuedPlayerRemovals.add(playerName);
+                }
             }
         }
     }
@@ -414,6 +437,33 @@ public class GameServer implements GameStateListener {
             rebuildPlayerIndexMap();
             sendGameStateUpdate();
         }
+    }
+    
+    private void handleRestartMatchRequest() {
+        if (gameLogic == null) {
+            Gdx.app.log("GameServer", "Cannot restart: game not started");
+            return;
+        }
+        
+        // Get list of currently connected players
+        ArrayList<String> playerNames = new ArrayList<>(connectedPlayers.values());
+        Gdx.app.log("GameServer", "Restarting match with players: " + playerNames);
+        
+        // Send restart response to all clients
+        NetworkPacket.RestartMatchResponse response = new NetworkPacket.RestartMatchResponse();
+        response.playerNames = playerNames;
+        server.sendToAllTCP(response);
+        
+        // Restart the game logic with the same players
+        this.gameLogic = new BlackjackLogic(null, playerNames);
+        this.gameLogic.setGameUI(null);
+        this.gameLogic.setGameStateListener(this);
+        
+        // Rebuild player index map
+        rebuildPlayerIndexMap();
+        
+        // Start the new game
+        this.gameLogic.update(0);
     }
 
     public void dispose() {
