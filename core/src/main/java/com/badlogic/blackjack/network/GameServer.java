@@ -77,13 +77,16 @@ public class GameServer implements GameStateListener {
                     NetworkPacket.RegisterPlayer packet = (NetworkPacket.RegisterPlayer) object;
                     // Check if lobby is full
                     if (connectedPlayers.size() < maxPlayers) {
-                        connectedPlayers.put(connection.getID(), packet.name);
+                        // Check for duplicate names and modify if necessary
+                        String finalName = ensureUniqueName(packet.name);
+                        
+                        connectedPlayers.put(connection.getID(), finalName);
                         // First player to connect is the host
                         if (hostPlayerName == null) {
-                            hostPlayerName = packet.name;
+                            hostPlayerName = finalName;
                             Gdx.app.log("GameServer", "Host player set: " + hostPlayerName);
                         }
-                        Gdx.app.log("GameServer", "Registered player: " + packet.name + " (Total: " + connectedPlayers.size() + ")");
+                        Gdx.app.log("GameServer", "Registered player: " + finalName + " (Total: " + connectedPlayers.size() + ")");
                         sendLobbyUpdate();
                     } else {
                         Gdx.app.log("GameServer", "Lobby full. Rejecting connection: " + packet.name);
@@ -421,6 +424,27 @@ public class GameServer implements GameStateListener {
                 }
             }
         }
+    }
+    
+    /**
+     * Ensures a player name is unique by appending a hyphen if a duplicate exists.
+     * @param requestedName The name the player requested
+     * @return A unique name (either the original or with hyphen appended)
+     */
+    private String ensureUniqueName(String requestedName) {
+        String finalName = requestedName;
+        
+        // Check if name already exists in connected players
+        while (connectedPlayers.containsValue(finalName)) {
+            // Append a hyphen to make it unique
+            finalName = finalName + "-";
+        }
+        
+        if (!finalName.equals(requestedName)) {
+            Gdx.app.log("GameServer", "Name conflict: " + requestedName + " renamed to " + finalName);
+        }
+        
+        return finalName;
     }
     
     private void processQueuedPlayerRemovals() {
