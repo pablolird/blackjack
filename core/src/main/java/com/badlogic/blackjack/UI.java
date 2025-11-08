@@ -28,6 +28,7 @@ public class UI {
     private final Window pauseMenu;
     private final Window gameOverMenu;
     private final Window gameOverWaitingMenu; // For non-host players
+    private final Window gameOverLocalMenu; // For local games (exit only)
     private final Map<Player, Label> playerScoreLabels;
     private final Map<Player, Label> playerBalanceLabels;
     private final BlackjackLogic blackjackLogic;
@@ -70,6 +71,9 @@ public class UI {
             public void changed(ChangeEvent event, Actor actor) {
                 if (gameClient != null) {
                     gameClient.sendAction(NetworkPacket.PlayerActionType.HIT);
+                } else {
+                    // Local game - call logic directly
+                    blackjackLogic.hit();
                 }
             }
         });
@@ -77,9 +81,11 @@ public class UI {
         standButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // --- MODIFIED: Send network command ---
                 if (gameClient != null) {
                     gameClient.sendAction(NetworkPacket.PlayerActionType.STAND);
+                } else {
+                    // Local game - call logic directly
+                    blackjackLogic.stand();
                 }
                 audioManager.playSound(SoundType.STAND, 1.0f);
             }
@@ -103,11 +109,12 @@ public class UI {
         bet10Button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // --- MODIFIED: Send network command ---
                 if (gameClient != null) {
                     gameClient.sendAction(NetworkPacket.PlayerActionType.ADD_TO_BET, 10);
+                } else {
+                    // Local game - call logic directly
+                    blackjackLogic.playerAddToBet(10);
                 }
-                // blackjackLogic.playerAddToBet(10); // <-- REMOVED
                 audioManager.playSound(SoundType.BET, 1.0f);
             }
         });
@@ -115,9 +122,11 @@ public class UI {
         bet50Button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // --- MODIFIED: Send network command ---
                 if (gameClient != null) {
                     gameClient.sendAction(NetworkPacket.PlayerActionType.ADD_TO_BET, 50);
+                } else {
+                    // Local game - call logic directly
+                    blackjackLogic.playerAddToBet(50);
                 }
                 audioManager.playSound(SoundType.BET, 1.0f);
             }
@@ -126,9 +135,11 @@ public class UI {
         bet100Button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // --- MODIFIED: Send network command ---
                 if (gameClient != null) {
                     gameClient.sendAction(NetworkPacket.PlayerActionType.ADD_TO_BET, 100);
+                } else {
+                    // Local game - call logic directly
+                    blackjackLogic.playerAddToBet(100);
                 }
                 audioManager.playSound(SoundType.BET, 1.0f);
             }
@@ -137,9 +148,11 @@ public class UI {
         confirmBetButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // --- MODIFIED: Send network command ---
                 if (gameClient != null) {
                     gameClient.sendAction(NetworkPacket.PlayerActionType.LOCK_IN_BET);
+                } else {
+                    // Local game - call logic directly
+                    blackjackLogic.playerLockInBet();
                 }
                 audioManager.playSound(SoundType.LOCKBET, 0.65f);
             }
@@ -207,6 +220,26 @@ public class UI {
         stage.addActor(gameOverWaitingMenu);
         gameOverWaitingMenu.setVisible(false); // Hide it by default
 
+        // 6. Build the Game Over Menu for Local Games (exit only, no restart)
+        gameOverLocalMenu = new Window("Game Over", skin);
+        gameOverLocalMenu.pad(20);
+        gameOverLocalMenu.padTop(50);
+        TextButton exitLocalButton = new TextButton("Exit", skin);
+        gameOverLocalMenu.add(exitLocalButton).expand().pad(10);
+        gameOverLocalMenu.pack();
+        gameOverLocalMenu.setPosition(stage.getWidth() / 2 - gameOverLocalMenu.getWidth() / 2, stage.getHeight() / 2 - gameOverLocalMenu.getHeight() / 2);
+        stage.addActor(gameOverLocalMenu);
+        gameOverLocalMenu.setVisible(false); // Hide it by default
+
+        exitLocalButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                // Local game - just return to start screen
+                game.setScreen(new StartScreen(game));
+                dispose(); // Dispose this screen
+            }
+        });
+
         exitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -222,13 +255,19 @@ public class UI {
         restartMatchButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // Send restart request to server (only host can do this)
-                if (gameClient != null && game.restartMatchCallback != null) {
+                // For local games, handle restart directly without callbacks
+                if (gameClient == null) {
+                    // Local game - restart directly
+                    Gdx.app.log("UI", "Restarting local game");
+                    int numPlayers = blackjackLogic.getPlayersList().size();
+                    game.setScreen(new GameScreen(game, numPlayers));
+                    dispose(); // Dispose this screen
+                } else if (game.restartMatchCallback != null) {
+                    // Multiplayer - use callback
+                    Gdx.app.log("UI", "Restart match button clicked - using callback");
                     game.restartMatchCallback.onRestartMatch();
                 } else {
-                    // Local game, just restart
-                    game.setScreen(new GameScreen(game, bl.numPlayers));
-                    dispose(); // Dispose this screen
+                    Gdx.app.log("UI", "No callback available for restart");
                 }
             }
         });
@@ -386,12 +425,28 @@ public class UI {
     }
 
     public void showGameOverMenu(boolean isHost) {
-        if (isHost) {
+        // Check if this is a local game
+        boolean isLocalGame = (gameClient == null);
+        
+        if (isLocalGame) {
+            // Local game - show menu with exit only
+            gameOverLocalMenu.setVisible(true);
+            gameOverMenu.setVisible(false);
+            gameOverWaitingMenu.setVisible(false);
+        } else if (isHost) {
+            // Multiplayer host - show menu with restart and exit
             gameOverMenu.setVisible(true);
+            gameOverLocalMenu.setVisible(false);
             gameOverWaitingMenu.setVisible(false);
         } else {
+            // Multiplayer non-host - show waiting menu
             gameOverMenu.setVisible(false);
+            gameOverLocalMenu.setVisible(false);
             gameOverWaitingMenu.setVisible(true);
         }
+    }
+    
+    public boolean isGameOverMenuVisible() {
+        return gameOverMenu.isVisible() || gameOverWaitingMenu.isVisible() || gameOverLocalMenu.isVisible();
     }
 }

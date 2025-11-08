@@ -80,7 +80,9 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         sequencer = new Sequencer(ecs, audioManager);
 
 
-        logic = new BlackjackLogic(sequencer, playerNames);
+        // Determine if this is a local game (no network client)
+        boolean isLocalGame = (game.gameClient == null);
+        logic = new BlackjackLogic(sequencer, playerNames, isLocalGame);
         ui = new UI(uiViewport, spriteBatch, logic, audioManager, game);
 
         logic.setGameUI(ui);
@@ -96,10 +98,19 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     }
     
     private void handleRestartMatch() {
-        if (isHost && game.gameClient != null) {
-            // Host sends restart request to server
+        Gdx.app.log("GameScreen", "handleRestartMatch called - isLocal: " + (game.gameClient == null) + ", isHost: " + isHost);
+        if (game.gameClient == null) {
+            // Local game - restart with same number of players
+            int numPlayers = logic.getPlayersList().size();
+            Gdx.app.log("GameScreen", "Restarting local game with " + numPlayers + " players");
+            game.setScreen(new GameScreen(game, numPlayers));
+            dispose();
+        } else if (isHost) {
+            // Multiplayer host - send restart request to server
+            Gdx.app.log("GameScreen", "Sending restart request to server");
             game.gameClient.sendRestartMatchRequest();
         }
+        // Non-host multiplayer players wait for server response
     }
     
     private void handleExitMatch() {
@@ -117,13 +128,13 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
     // --- Overload for existing local game calls, passing dummy values ---
     public GameScreen(Main game, int numPlayers) {
-        this(game, false, createDummyPlayerNames(numPlayers));
+        this(game, false, createLocalPlayerNames(numPlayers));
     }
 
-    private static List<String> createDummyPlayerNames(int n) {
+    private static List<String> createLocalPlayerNames(int n) {
         List<String> names = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            names.add("Player " + (i+1));
+            names.add("P" + (i+1));
         }
         return names;
     }
@@ -137,14 +148,29 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
         // Game logic continues even when pause menu is open (multiplayer)
         // If host, update server logic (handles card dealing and state management)
-        if (isHost && gameServer != null) {
+        // For local games, update logic directly
+        if (game.gameClient == null) {
+            // Local game - update logic directly
+            logic.update(delta);
+            
+            // Check for GAME_OVER state in local games and show menu
+            // Only show once to avoid repeated calls
+            if (logic.getGameState() == GameState.GAME_OVER && !ui.isGameOverMenuVisible()) {
+                // For local games, always show host menu (restart/exit options)
+                ui.showGameOverMenu(true);
+                ui.showBettingPanel(false);
+                ui.showPlayerActionPanel(false);
+            }
+        } else if (isHost && gameServer != null) {
+            // Multiplayer host - server updates logic
             gameServer.update(delta);
         }
         
         sequencer.update(delta); // Sequencer runs on all clients for smooth animations
         
-        // Handle RESOLVING_BETS delay and animation on clients
-        if (resolvingBetsDelay > 0) {
+        // Handle RESOLVING_BETS delay and animation on clients (multiplayer only)
+        // For local games, the logic handles everything directly
+        if (game.gameClient != null && resolvingBetsDelay > 0) {
             resolvingBetsDelay -= delta;
             if (resolvingBetsDelay <= 0 && !cardReturnAnimationStarted) {
                 // Delay complete, start card return animation
@@ -154,8 +180,11 @@ public class GameScreen implements Screen, LobbyUpdateListener {
             }
         }
         
-        // Process pending animations one at a time when sequencer is not busy
-        processPendingAnimations();
+        // Process pending animations one at a time when sequencer is not busy (multiplayer only)
+        // For local games, animations are handled directly by the logic
+        if (game.gameClient != null) {
+            processPendingAnimations();
+        }
 
         ecs.update(delta);
         ui.update(delta);
@@ -276,6 +305,11 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
     @Override
     public void onGameStateUpdate(NetworkPacket.GameStateUpdate update) {
+        // Only process network updates in multiplayer games
+        if (game.gameClient == null) {
+            return; // Local game - logic handles everything directly
+        }
+        
         Gdx.app.log("GameScreen", "Received state update: " + update.currentGameState + " | Current Player: " + update.currentPlayerName);
 
         // --- THIS IS THE ENTIRE CLIENT-SIDE IMPLEMENTATION ---
@@ -348,7 +382,9 @@ public class GameScreen implements Screen, LobbyUpdateListener {
                 break;
             case GAME_OVER:
                 // Show game over menu on clients when GAME_OVER state is received
-                ui.showGameOverMenu(isHost);
+                // For local games, always show host menu (restart/exit options)
+                boolean showHostMenu = isHost || (game.gameClient == null);
+                ui.showGameOverMenu(showHostMenu);
                 ui.showBettingPanel(false);
                 ui.showPlayerActionPanel(false);
                 break;

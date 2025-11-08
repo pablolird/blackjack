@@ -7,6 +7,7 @@ import com.badlogic.gdx.Gdx;
 
 public class BlackjackLogic {
     private final Sequencer sequencer;
+    private final boolean isLocalGame; // True if this is a local (non-network) game
     int current_playerIndex;
     int numPlayers;
     Deck deck;
@@ -28,8 +29,13 @@ public class BlackjackLogic {
     private GameStateListener stateListener;
 
     public BlackjackLogic(Sequencer sequencer, List<String> playerNames) {
+        this(sequencer, playerNames, false);
+    }
+    
+    public BlackjackLogic(Sequencer sequencer, List<String> playerNames, boolean isLocalGame) {
         this.numPlayers = playerNames.size();
         this.sequencer = sequencer;
+        this.isLocalGame = isLocalGame;
         this.deck = new Deck();
         this.dealer = new Dealer();
         gameState = GameState.STARTING;
@@ -46,20 +52,21 @@ public class BlackjackLogic {
     }
 
     // --- OVERLOADED CONSTRUCTOR (Kept for compatibility with old local game calls) ---
+    // This constructor is for local games, so isLocalGame is always true
     public BlackjackLogic(Sequencer sequencer, int n) {
         // Create dummy names for local game initialization
         List<String> dummyNames = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            dummyNames.add("Player " + (i+1));
+            dummyNames.add("P" + (i+1));
         }
         this.numPlayers = n;
         this.sequencer = sequencer;
+        this.isLocalGame = true; // This constructor is only used for local games
         this.deck = new Deck();
         this.dealer = new Dealer();
         gameState = GameState.STARTING;
 
         playersList = new ArrayList<>();
-
 
         for (String name : dummyNames) {
             Player p = new Player(name, 100);
@@ -252,6 +259,9 @@ public class BlackjackLogic {
 
         curentPlayer.addCard(deck.deal());
         sequencer.createDealCardAction(curentPlayer, current_playerIndex);
+        if (gameUI != null) {
+            gameUI.updatePlayerScore(curentPlayer);
+        }
     }
 
     public void hit() {
@@ -386,6 +396,7 @@ public class BlackjackLogic {
                 if (curentPlayer.m_currentCards.size() < 2) {
                     curentPlayer.addCard(deck.deal());
                     if(sequencer != null) sequencer.createDealCardAction(curentPlayer, current_playerIndex); // Check for null
+                    if(gameUI != null) gameUI.updatePlayerScore(curentPlayer); // Check for null
                     current_playerIndex++;
 
                     // Transition to ANIMATIONS_IN_PROGRESS to wait for animation
@@ -502,10 +513,10 @@ public class BlackjackLogic {
             case RESOLVING_BETS:
                 // Resolve bets only once when entering this state
                 if (!betsResolved) {
-                    // Only resolve bets on server (where sequencer is null)
-                    // Clients receive updated balances from server
-                    if (sequencer == null) {
-                        // Server: calculate and update balances
+                    // Resolve bets on server (where sequencer is null) OR in local games
+                    // Clients in multiplayer receive updated balances from server
+                    if (sequencer == null || isLocalGame) {
+                        // Server or local game: calculate and update balances
                         resolveBets();
                     } else {
                         // Client: balances already synced from server, just update UI
@@ -616,7 +627,10 @@ public class BlackjackLogic {
             case GAME_OVER:
                 if(gameUI != null) {
                     // Pass isHost flag - sequencer is null on server (host), not null on clients
-                    boolean isHost = (sequencer == null);
+                    // For local games, always show host menu (restart/exit options)
+                    // For multiplayer, this is called on the server (host) where sequencer is null
+                    // GameScreen also handles showing the menu for local games, but this ensures it's shown
+                    boolean isHost = (sequencer == null) || isLocalGame;
                     gameUI.showGameOverMenu(isHost);
                 }
                 break;
