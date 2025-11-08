@@ -23,6 +23,22 @@ public class Card {
         }
     }
 
+    public Card(int id, String rank, String suit) {
+        this.m_id = id; // Use the server's ID
+        this.m_rank = rank;
+        this.m_suit = suit;
+
+        if (rank.equals("Q") || rank.equals("J") || rank.equals("K")) {
+            this.m_value = 10;
+        }
+        else if (rank.equals("A")) {
+            this.m_value = 11;
+        }
+        else {
+            this.m_value = Integer.parseInt(rank);
+        }
+    }
+
     public String getSuit() {
         return m_suit;
     }

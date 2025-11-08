@@ -283,43 +283,63 @@ public class BlackjackLogic {
                     if(sequencer != null) sequencer.createDealCardToDealerAction(dealer); // Check for null
                     if(gameUI != null) gameUI.updateDealerScore(dealer); // Check for null
                     gameState = GameState.DEALING_PLAYERS;
-                    // No notify, flows into next state
+
+                    notifyStateChanged(); // NOTIFY (Dealing dealer finished)
                 }
                 break;
             case DEALING_PLAYERS:
-                if(gameUI != null) gameUI.showPlayerActionPanel(false); // Check for null
+                if(gameUI != null) gameUI.showPlayerActionPanel(false);
 
-                // --- MODIFIED dealInitialCards logic ---
                 if (sequencer != null && sequencer.isBusy()) {
-
-                    // --- FIX IS HERE ---
-                    // We must check if the index is valid *before* accessing anything with it.
+                    // CLIENT-only logic: Wait for animations to finish.
                     if (current_playerIndex < playersList.size()) {
                         if(gameUI != null) gameUI.updatePlayerScore(playersList.get(current_playerIndex));
-
-                        // This check is now nested inside the safety check
-                        if (playersList.get(current_playerIndex).m_currentCards.size() > 1 ) {
-                            current_playerIndex++;
-                        }
                     }
-                    // If index is out of bounds (meaning we just finished the last player),
-                    // we simply return and wait for the sequencer to finish.
-                    // The logic below will handle the state transition.
+                    if (current_playerIndex > 0 && playersList.get(current_playerIndex-1).m_currentCards.size() > 1 ) {
+                        current_playerIndex++;
+                    } else if (current_playerIndex == 0 && playersList.get(0).m_currentCards.size() > 1) {
+                        current_playerIndex++;
+                    }
                     return;
-                    // --- END FIX ---
                 }
 
-                if (current_playerIndex == playersList.size()) {
-                    current_playerIndex=0;
+                // --- This logic runs if sequencer is NOT busy, or if sequencer is NULL ---
+
+                // Check if all players have 2 cards. If so, we are done.
+                if (playersList.get(playersList.size() - 1).m_currentCards.size() == 2) {
+                    current_playerIndex = 0; // Reset for PLAYER_TURN
                     gameState = GameState.ANIMATIONS_IN_PROGRESS;
-                    notifyStateChanged(); // NOTIFY
-                    return;
+                    notifyStateChanged(); // Tell GameServer to auto-tick to ANIMATIONS_IN_PROGRESS
+                    break; // We are done with this state
                 }
 
+                // If we're here, someone needs a card.
+
+                // Check if we've looped through all players once
+                if (current_playerIndex == playersList.size()) {
+                    current_playerIndex = 0; // Reset for the second card pass
+                }
+
+                // Get the player who is next in line
                 Player curentPlayer = playersList.get(current_playerIndex);
-                curentPlayer.addCard(deck.deal());
-                if(sequencer != null) sequencer.createDealCardAction(curentPlayer, current_playerIndex); // Check for null
-                // --- END MODIFIED ---
+
+                // If they don't have 2 cards, deal one.
+                if (curentPlayer.m_currentCards.size() < 2) {
+                    curentPlayer.addCard(deck.deal());
+                    if (sequencer != null) {
+                        // CLIENT: Create animation
+                        sequencer.createDealCardAction(curentPlayer, current_playerIndex);
+                    }
+                }
+
+                // Move to the next player for the *next* tick
+                current_playerIndex++;
+
+                if (sequencer == null) {
+                    // SERVER: No animation, so notify immediately to tick again.
+                    notifyStateChanged();
+                }
+                // Client will 'break' and wait for sequencer.isBusy() next frame
                 break;
             case ANIMATIONS_IN_PROGRESS:
                 if (sequencer == null || !sequencer.isBusy()) { // Check for null

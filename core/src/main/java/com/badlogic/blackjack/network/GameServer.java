@@ -182,7 +182,30 @@ public class GameServer implements GameStateListener {
     public void onGameStateChanged() {
         // This is called by gameLogic.notifyStateChanged()
         Gdx.app.log("GameServer", "Logic state changed, broadcasting update...");
-        sendGameStateUpdate();
+        sendGameStateUpdate(); // Broadcast the state we *just entered*
+
+        GameState state = gameLogic.getGameState();
+
+        switch (state) {
+            case DEALING_DEALER:
+            case DEALING_PLAYERS:
+            case ANIMATIONS_IN_PROGRESS:
+            case DEALER_TURN:
+            case RESOLVING_BETS:
+            case FINISHING_ROUND:
+            case STARTING: // STARTING auto-transitions to BETTING
+                Gdx.app.log("GameServer", "Auto-ticking state: " + state);
+                // Pass 0 for delta. This update will likely cause *another*
+                // state change, which will call onGameStateChanged() again,
+                // continuing the chain until a player-input state is reached.
+                gameLogic.update(0);
+                break;
+            case BETTING:
+            case PLAYER_TURN:
+            case GAME_OVER:
+                // These states require player input or are final, so we stop ticking.
+                break;
+        }
     }
 
     public void sendGameStateUpdate() {

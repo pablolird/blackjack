@@ -8,6 +8,14 @@ public class Dealer {
 
     public Dealer() {}
 
+    public boolean hasCard(int cardId) {
+        for (Card c : m_currentCards) {
+            if (c.m_id == cardId) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public void addCard(String sign, String suit) {
         this.m_currentCards.add(new Card(sign, suit));

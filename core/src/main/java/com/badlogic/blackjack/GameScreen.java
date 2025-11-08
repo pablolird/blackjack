@@ -89,7 +89,8 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         }
 
         if (!ui.isPaused()) {
-            sequencer.update(delta); // Sequencer runs on all clients for smooth animations
+            logic.update(delta);
+            sequencer.update(delta); // Sequencer runs on all clients
         }
 
         ecs.update(delta);
@@ -156,11 +157,9 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     public void onGameStateUpdate(NetworkPacket.GameStateUpdate update) {
         Gdx.app.log("GameScreen", "Received state update: " + update.currentGameState + " | Current Player: " + update.currentPlayerName);
 
-        // --- THIS IS THE ENTIRE CLIENT-SIDE IMPLEMENTATION ---
-
         // 1. Update all local player data (balances, bets) from the packet
+        int playerIndex = 0; // We need to track the index for the sequencer
         for (PlayerInfo serverPlayer : update.players) {
-            // Find the matching local player
             Player localPlayer = null;
             for (Player p : logic.getPlayersList()) {
                 if (p.getName().equals(serverPlayer.name)) {
@@ -170,13 +169,25 @@ public class GameScreen implements Screen, LobbyUpdateListener {
             }
 
             if (localPlayer != null) {
-                // Force the local player's state to match the server's
+                // Force the local player's state
                 localPlayer.setBalance(serverPlayer.balance);
                 localPlayer.setCurrentBet(serverPlayer.currentBet);
-
-                // Update the UI with this new data
                 ui.updatePlayerBalance(localPlayer);
+
+                // --- Synchronize Player Cards ---
+                for (CardInfo serverCardInfo : serverPlayer.cards) {
+                    // Check if we already have this card
+                    if (!localPlayer.hasCard(serverCardInfo.id)) {
+                        // This is a new card! Create it using the server's ID
+                        Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
+                        localPlayer.addCard(newCard); // Add to local data
+                        sequencer.createDealCardAction(localPlayer, playerIndex); // Animate it
+                    }
+                }
+                // Always update the UI score
+                ui.updatePlayerScore(localPlayer);
             }
+            playerIndex++;
         }
 
         // 2. Update the UI panels based on the game state
@@ -206,7 +217,19 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         }
 
         // 4. Synchronize Cards (This is the next big step)
-        // We will add card synchronization here in the next step.
-        // For now, this will get the UI and turns working.
+        Dealer localDealer = logic.getDealer();
+        for (CardInfo serverCardInfo : update.dealerCards) {
+            if (!localDealer.hasCard(serverCardInfo.id)) {
+                // This is a new dealer card
+                Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
+                localDealer.addCard(newCard);
+                sequencer.createDealCardToDealerAction(localDealer);
+            }
+
+            // TODO: Handle flipping the hole card
+            // We will add this logic later. For now, we just deal.
+        }
+        // Always update the UI score
+        ui.updateDealerScore(localDealer);
     }
 }
