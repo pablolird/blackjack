@@ -35,6 +35,23 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     private final List<String> playerNames;
     private final GameServer gameServer;
 
+    // Queue system for sequential animations in multiplayer
+    private static class PendingAnimation {
+        enum Type { DEALER, PLAYER }
+        Type type;
+        CardInfo cardInfo;
+        int playerIndex;
+        String playerName;
+
+        PendingAnimation(Type type, CardInfo cardInfo, int playerIndex, String playerName) {
+            this.type = type;
+            this.cardInfo = cardInfo;
+            this.playerIndex = playerIndex;
+            this.playerName = playerName;
+        }
+    }
+    private final List<PendingAnimation> pendingAnimations = new ArrayList<>();
+
     public GameScreen(Main game, boolean isHost, List<String> playerNames) {
         this.game = game;
         this.assets = game.assets; // Get shared assets
@@ -91,6 +108,9 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         if (!ui.isPaused()) {
             logic.update(delta);
             sequencer.update(delta); // Sequencer runs on all clients
+            
+            // Process pending animations one at a time when sequencer is not busy
+            processPendingAnimations();
         }
 
         ecs.update(delta);
@@ -157,9 +177,26 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     public void onGameStateUpdate(NetworkPacket.GameStateUpdate update) {
         Gdx.app.log("GameScreen", "Received state update: " + update.currentGameState + " | Current Player: " + update.currentPlayerName);
 
-        // 1. Update all local player data (balances, bets) from the packet
-        int playerIndex = 0; // We need to track the index for the sequencer
-        for (PlayerInfo serverPlayer : update.players) {
+        // Flag to prevent queuing more than ONE animation per network packet.
+        boolean animationQueuedThisPacket = false;
+
+        // --- 1. CRITICAL: Check and Queue Dealer Card Animation (Priority 1) ---
+        Dealer localDealer = logic.getDealer();
+        for (NetworkPacket.CardInfo serverCardInfo : update.dealerCards) {
+            if (!localDealer.hasCard(serverCardInfo.id)) {
+                // This is the new card! Add it to local data and QUEUE animation
+                Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
+                localDealer.addCard(newCard);
+                pendingAnimations.add(new PendingAnimation(PendingAnimation.Type.DEALER, serverCardInfo, -1, null));
+                animationQueuedThisPacket = true;
+                ui.updateDealerScore(localDealer);
+                break; // *** STOP HERE! Only one animation per packet. ***
+            }
+        }
+
+        // --- 2. Synchronize Player Data and Queue Animations (Priority 2) ---
+        int playerIndex = 0;
+        for (NetworkPacket.PlayerInfo serverPlayer : update.players) {
             Player localPlayer = null;
             for (Player p : logic.getPlayersList()) {
                 if (p.getName().equals(serverPlayer.name)) {
@@ -169,28 +206,39 @@ public class GameScreen implements Screen, LobbyUpdateListener {
             }
 
             if (localPlayer != null) {
-                // Force the local player's state
+                // Force the local player's state (Always sync money/balance)
                 localPlayer.setBalance(serverPlayer.balance);
                 localPlayer.setCurrentBet(serverPlayer.currentBet);
                 ui.updatePlayerBalance(localPlayer);
 
-                // --- Synchronize Player Cards ---
-                for (CardInfo serverCardInfo : serverPlayer.cards) {
-                    // Check if we already have this card
-                    if (!localPlayer.hasCard(serverCardInfo.id)) {
-                        // This is a new card! Create it using the server's ID
-                        Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
-                        localPlayer.addCard(newCard); // Add to local data
-                        sequencer.createDealCardAction(localPlayer, playerIndex); // Animate it
+                if (!animationQueuedThisPacket) { // Only check if no Dealer or previous Player animation was queued
+                    for (NetworkPacket.CardInfo serverCardInfo : serverPlayer.cards) {
+                        if (!localPlayer.hasCard(serverCardInfo.id)) {
+                            // This is the new card! Add it to local data AND QUEUE animation
+                            Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
+                            localPlayer.addCard(newCard);
+                            pendingAnimations.add(new PendingAnimation(PendingAnimation.Type.PLAYER, serverCardInfo, playerIndex, serverPlayer.name));
+                            animationQueuedThisPacket = true;
+                            ui.updatePlayerScore(localPlayer);
+                            break; // *** STOP HERE! Only one animation per packet. ***
+                        }
                     }
                 }
+
                 // Always update the UI score
                 ui.updatePlayerScore(localPlayer);
             }
             playerIndex++;
         }
 
-        // 2. Update the UI panels based on the game state
+        // If no animation was queued, ensure the dealer score is updated
+        // (This happens automatically in the loops if a new card was found, but is safe here)
+        if (!animationQueuedThisPacket) {
+            ui.updateDealerScore(localDealer);
+        }
+
+
+        // 3. Update the UI panels based on the game state
         GameState state = GameState.valueOf(update.currentGameState);
         switch (state) {
             case BETTING:
@@ -208,28 +256,48 @@ public class GameScreen implements Screen, LobbyUpdateListener {
                 break;
         }
 
-        // 3. Highlight the current player
+        // 4. Highlight the current player
         if (update.currentPlayerIndex >= 0 && update.currentPlayerIndex < logic.getPlayersList().size()) {
             Player currentPlayer = logic.getPlayersList().get(update.currentPlayerIndex);
             ui.updateCurrentPlayerColor(currentPlayer);
         } else {
             ui.updateCurrentPlayerColor(null); // No player is active, unhighlight all
         }
+    }
 
-        // 4. Synchronize Cards (This is the next big step)
-        Dealer localDealer = logic.getDealer();
-        for (CardInfo serverCardInfo : update.dealerCards) {
-            if (!localDealer.hasCard(serverCardInfo.id)) {
-                // This is a new dealer card
-                Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
-                localDealer.addCard(newCard);
-                sequencer.createDealCardToDealerAction(localDealer);
+    /**
+     * Processes pending animations one at a time when the sequencer is not busy.
+     * This ensures animations happen sequentially across all clients in multiplayer.
+     */
+    private void processPendingAnimations() {
+        // Only process if sequencer is not busy and there are pending animations
+        if (sequencer.isBusy() || pendingAnimations.isEmpty()) {
+            return;
+        }
+
+        // Process the first pending animation
+        PendingAnimation pending = pendingAnimations.remove(0);
+
+        if (pending.type == PendingAnimation.Type.DEALER) {
+            Dealer dealer = logic.getDealer();
+            sequencer.createDealCardToDealerAction(dealer);
+            ui.updateDealerScore(dealer);
+        } else if (pending.type == PendingAnimation.Type.PLAYER) {
+            // Find the player by name
+            Player targetPlayer = null;
+            for (Player p : logic.getPlayersList()) {
+                if (p.getName().equals(pending.playerName)) {
+                    targetPlayer = p;
+                    break;
+                }
             }
 
-            // TODO: Handle flipping the hole card
-            // We will add this logic later. For now, we just deal.
+            if (targetPlayer != null) {
+                sequencer.createDealCardAction(targetPlayer, pending.playerIndex);
+                ui.updatePlayerScore(targetPlayer);
+            } else {
+                Gdx.app.error("GameScreen", "Could not find player: " + pending.playerName);
+            }
         }
-        // Always update the UI score
-        ui.updateDealerScore(localDealer);
     }
 }

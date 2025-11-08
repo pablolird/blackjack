@@ -279,51 +279,51 @@ public class BlackjackLogic {
             case DEALING_DEALER:
                 if(sequencer == null || !sequencer.isBusy()) // Check for null
                 {
-                    dealer.addCard(deck.deal());
-                    if(sequencer != null) sequencer.createDealCardToDealerAction(dealer); // Check for null
-                    if(gameUI != null) gameUI.updateDealerScore(dealer); // Check for null
-                    gameState = GameState.DEALING_PLAYERS;
+                    // Only deal the dealer's first card if they don't have any yet
+                    if (dealer.m_currentCards.size() == 0) {
+                        dealer.addCard(deck.deal());
+                        if(sequencer != null) sequencer.createDealCardToDealerAction(dealer); // Client creates animation
+                        if(gameUI != null) gameUI.updateDealerScore(dealer);
 
-                    notifyStateChanged(); // NOTIFY (Dealing dealer finished)
+                        // FORCE a state change to wait for the animation (even on the server)
+                        gameState = GameState.ANIMATIONS_IN_PROGRESS;
+                        notifyStateChanged(); // NOTIFY all clients
+                        return; // *** ADDED: Exit update() to stop auto-tick. ***
+                    } else {
+                        // Fallback: If dealer already has a card, move to dealing players
+                        gameState = GameState.DEALING_PLAYERS;
+                        notifyStateChanged();
+                        return; // *** ADDED: Exit update() to stop auto-tick. ***
+                    }
                 }
                 break;
+
             case DEALING_PLAYERS:
                 if(gameUI != null) gameUI.showPlayerActionPanel(false);
 
                 if (sequencer != null && sequencer.isBusy()) {
-                    // CLIENT-only logic: Wait for animations to finish.
+                    // CLIENT-only: Wait for the previous animation to complete.
                     if (current_playerIndex < playersList.size()) {
                         if(gameUI != null) gameUI.updatePlayerScore(playersList.get(current_playerIndex));
                     }
-                    if (current_playerIndex > 0 && playersList.get(current_playerIndex-1).m_currentCards.size() > 1 ) {
-                        current_playerIndex++;
-                    } else if (current_playerIndex == 0 && playersList.get(0).m_currentCards.size() > 1) {
-                        current_playerIndex++;
-                    }
-                    return;
+                    return; // Wait for animation
                 }
 
-                // --- This logic runs if sequencer is NOT busy, or if sequencer is NULL ---
-
-                // Check if all players have 2 cards. If so, we are done.
+                // 1. Check for END OF DEALING FIRST
                 if (playersList.get(playersList.size() - 1).m_currentCards.size() == 2) {
-                    current_playerIndex = 0; // Reset for PLAYER_TURN
+                    current_playerIndex = 0;
                     gameState = GameState.ANIMATIONS_IN_PROGRESS;
-                    notifyStateChanged(); // Tell GameServer to auto-tick to ANIMATIONS_IN_PROGRESS
-                    break; // We are done with this state
+                    notifyStateChanged(); // This wait will lead to PLAYER_TURN
+                    return; // *** ADDED: Exit update() after final transition. ***
                 }
 
-                // If we're here, someone needs a card.
-
-                // Check if we've looped through all players once
-                if (current_playerIndex == playersList.size()) {
-                    current_playerIndex = 0; // Reset for the second card pass
+                // 2. Reset the player index if we finished the previous card pass
+                if (current_playerIndex >= playersList.size()) {
+                    current_playerIndex = 0;
                 }
 
-                // Get the player who is next in line
+                // 3. DEAL ONE CARD
                 Player curentPlayer = playersList.get(current_playerIndex);
-
-                // If they don't have 2 cards, deal one.
                 if (curentPlayer.m_currentCards.size() < 2) {
                     curentPlayer.addCard(deck.deal());
                     if (sequencer != null) {
@@ -332,21 +332,32 @@ public class BlackjackLogic {
                     }
                 }
 
-                // Move to the next player for the *next* tick
+                // 4. Move to the next player & force animation wait
                 current_playerIndex++;
 
-                if (sequencer == null) {
-                    // SERVER: No animation, so notify immediately to tick again.
-                    notifyStateChanged();
-                }
-                // Client will 'break' and wait for sequencer.isBusy() next frame
-                break;
+                // Force a state change to wait for the animation to complete
+                gameState = GameState.ANIMATIONS_IN_PROGRESS;
+                notifyStateChanged(); // NOTIFY (Moves server/clients to wait for animation)
+                return; // *** ADDED: Exit update() to force a single-card deal per server tick. ***
+
             case ANIMATIONS_IN_PROGRESS:
                 if (sequencer == null || !sequencer.isBusy()) { // Check for null
-                    gameState = GameState.PLAYER_TURN;
+                    // If the final player has 2 cards, the initial deal is finished, go to PLAYER_TURN.
+                    if (playersList.get(playersList.size() - 1).m_currentCards.size() == 2) {
+                        current_playerIndex = 0;
+                        gameState = GameState.PLAYER_TURN;
+                    } else if (dealer.m_currentCards.size() == 0) {
+                        // Safest to go back to DEALING_DEALER if somehow the dealer still needs their first card.
+                        gameState = GameState.DEALING_DEALER;
+                    } else {
+                        // If not finished, move back to DEALING_PLAYERS to deal the next card in the sequence.
+                        gameState = GameState.DEALING_PLAYERS;
+                    }
                     notifyStateChanged(); // NOTIFY
+                    return; // *** ADDED: Exit update() to stop auto-tick after state decision. ***
                 }
                 break;
+
             case PLAYER_TURN:
                 if (gameUI != null && !gameUI.ActionPanelIsVisible()) // Check for null
                 {
