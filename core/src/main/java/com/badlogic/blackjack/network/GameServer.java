@@ -190,7 +190,9 @@ public class GameServer implements GameStateListener {
         GameState state = gameLogic.getGameState();
         if (state == GameState.ANIMATIONS_IN_PROGRESS || 
             state == GameState.DEALING_DEALER || 
-            state == GameState.DEALING_PLAYERS) {
+            state == GameState.DEALING_PLAYERS ||
+            state == GameState.RESOLVING_BETS ||
+            state == GameState.FINISHING_ROUND) {
             animationTimer = ANIMATION_DELAY;
         }
     }

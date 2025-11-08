@@ -13,7 +13,7 @@ public class BlackjackLogic {
     List<Player> playersList;
     GameState gameState;
     UI gameUI;
-
+    private boolean betsResolved = false;
 
     private GameStateListener stateListener;
 
@@ -200,17 +200,13 @@ public class BlackjackLogic {
             gameUI.showPlayerActionPanel(false);
         }
 
-        if (sequencer != null) sequencer.moveCardsToDeck(playersList, dealer); // Check for null
-
-        dealer.reset();
-        for (Player p : playersList) {
-            p.reset();
-            if (p.getBalance() < 1) {
-                p.toggleActive();
-            }
+        // Start animation to return cards to deck
+        if (sequencer != null) {
+            sequencer.moveCardsToDeck(playersList, dealer);
         }
 
-        gameState = GameState.FINISHING_ROUND;
+        // Stay in RESOLVING_BETS - the state machine will transition to FINISHING_ROUND
+        // after the animation delay (handled by server) or when sequencer is done (client)
         notifyStateChanged(); // NOTIFY
     }
 
@@ -266,6 +262,7 @@ public class BlackjackLogic {
 
                 // Reset player index just in case the last player was removed
                 current_playerIndex = 0;
+                betsResolved = false; // Reset flag for new round
                 gameState = GameState.BETTING;
                 if(gameUI != null) {
                     gameUI.showBettingPanel(true);
@@ -410,12 +407,60 @@ public class BlackjackLogic {
                 }
                 break;
             case RESOLVING_BETS:
-                resolveBets();
-                // We notify inside resolveBets()
+                // Resolve bets only once when entering this state
+                if (!betsResolved) {
+                    // Only resolve bets on server (where sequencer is null)
+                    // Clients receive updated balances from server and just need to start animation
+                    if (sequencer == null) {
+                        // Server: calculate and update balances
+                        resolveBets();
+                    } else {
+                        // Client: balances already synced from server, just start animation
+                        // Start animation to return cards to deck
+                        sequencer.moveCardsToDeck(playersList, dealer);
+                        // Update UI scores
+                        if (gameUI != null) {
+                            gameUI.updateDealerScore(dealer);
+                            gameUI.showPlayerActionPanel(false);
+                            for (Player p : playersList) {
+                                gameUI.updatePlayerScore(p);
+                            }
+                        }
+                    }
+                    betsResolved = true;
+                }
+                
+                // Wait for animation to complete before transitioning
+                if (sequencer == null || !sequencer.isBusy()) {
+                    // On server (sequencer is null) or when animation is done, transition to FINISHING_ROUND
+                    gameState = GameState.FINISHING_ROUND;
+                    betsResolved = false; // Reset flag for next round
+                    notifyStateChanged();
+                }
                 break;
             case FINISHING_ROUND:
                 if (sequencer == null || !sequencer.isBusy()) { // Check for null
+                    // Clear card entities from the ECS
                     if(sequencer != null) sequencer.clearCardEntities(); // Check for null
+                    
+                    // Reset all cards and bets
+                    dealer.reset();
+                    for (Player p : playersList) {
+                        p.reset();
+                        if (p.getBalance() < 1) {
+                            p.toggleActive();
+                        }
+                    }
+                    
+                    // Update UI scores to reflect cleared state
+                    if (gameUI != null) {
+                        gameUI.updateDealerScore(dealer);
+                        for (Player p : playersList) {
+                            gameUI.updatePlayerScore(p);
+                        }
+                    }
+                    
+                    // Move to STARTING state to begin new round
                     gameState = GameState.STARTING;
                     notifyStateChanged(); // NOTIFY
                 }

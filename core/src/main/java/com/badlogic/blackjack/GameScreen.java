@@ -51,6 +51,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         }
     }
     private final List<PendingAnimation> pendingAnimations = new ArrayList<>();
+    private boolean cardReturnAnimationStarted = false;
 
     public GameScreen(Main game, boolean isHost, List<String> playerNames) {
         this.game = game;
@@ -222,6 +223,30 @@ public class GameScreen implements Screen, LobbyUpdateListener {
                 break;
         }
 
+        // 2.5. Handle STARTING state - ensure everything is cleared for new round
+        if (state == GameState.STARTING || state == GameState.BETTING) {
+            // Always clear cards and entities when starting a new round
+            // Server should have empty card lists at this point
+            Dealer localDealer = logic.getDealer();
+            
+            // Force clear everything when starting new round
+            if (!localDealer.m_currentCards.isEmpty() || 
+                logic.getPlayersList().stream().anyMatch(p -> !p.m_currentCards.isEmpty())) {
+                // Clear all cards and entities
+                localDealer.reset();
+                for (Player p : logic.getPlayersList()) {
+                    p.reset();
+                }
+                sequencer.clearCardEntities();
+                // Update UI scores to reflect cleared state
+                ui.updateDealerScore(localDealer);
+                for (Player p : logic.getPlayersList()) {
+                    ui.updatePlayerScore(p);
+                }
+                cardReturnAnimationStarted = false;
+            }
+        }
+
         // 3. Highlight the current player
         if (update.currentPlayerIndex >= 0 && update.currentPlayerIndex < logic.getPlayersList().size()) {
             Player currentPlayer = logic.getPlayersList().get(update.currentPlayerIndex);
@@ -230,45 +255,141 @@ public class GameScreen implements Screen, LobbyUpdateListener {
             ui.updateCurrentPlayerColor(null); // No player is active, unhighlight all
         }
 
-        // 4. Synchronize Cards and Queue Animations
-        // Check for new dealer cards
-        Dealer localDealer = logic.getDealer();
-        for (CardInfo serverCardInfo : update.dealerCards) {
-            if (!localDealer.hasCard(serverCardInfo.id)) {
-                // New dealer card detected - add to local data and queue animation
-                Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
-                localDealer.addCard(newCard);
-                pendingAnimations.add(new PendingAnimation(PendingAnimation.Type.DEALER, serverCardInfo, -1, null));
-                ui.updateDealerScore(localDealer);
-                break; // Only one new card per update
+        // 4. Handle RESOLVING_BETS state - trigger card return animation
+        if (state == GameState.RESOLVING_BETS) {
+            // Server has resolved bets, start animation to return cards to deck (only once)
+            if (!cardReturnAnimationStarted) {
+                Dealer localDealer = logic.getDealer();
+                if (!localDealer.m_currentCards.isEmpty()) {
+                    sequencer.moveCardsToDeck(logic.getPlayersList(), localDealer);
+                    cardReturnAnimationStarted = true;
+                }
             }
         }
 
-        // Check for new player cards
-        int playerIndex = 0;
-        for (PlayerInfo serverPlayer : update.players) {
-            Player localPlayer = null;
-            for (Player p : logic.getPlayersList()) {
-                if (p.getName().equals(serverPlayer.name)) {
-                    localPlayer = p;
-                    break;
-                }
-            }
-
-            if (localPlayer != null) {
-                // Check for new cards for this player
-                for (CardInfo serverCardInfo : serverPlayer.cards) {
-                    if (!localPlayer.hasCard(serverCardInfo.id)) {
-                        // New player card detected - add to local data and queue animation
-                        Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
-                        localPlayer.addCard(newCard);
-                        pendingAnimations.add(new PendingAnimation(PendingAnimation.Type.PLAYER, serverCardInfo, playerIndex, serverPlayer.name));
-                        ui.updatePlayerScore(localPlayer);
-                        break; // Only one new card per player per update
+        // 5. Handle FINISHING_ROUND state - clear cards when server indicates they're cleared
+        if (state == GameState.FINISHING_ROUND) {
+            // Wait for animation to complete, then clear cards
+            if (!sequencer.isBusy()) {
+                // Check if server has cleared cards (empty card lists)
+                if (update.dealerCards.isEmpty() && update.players.stream().allMatch(p -> p.cards.isEmpty())) {
+                    // Server has cleared cards, clear local state
+                    logic.getDealer().reset();
+                    for (Player p : logic.getPlayersList()) {
+                        p.reset();
+                    }
+                    sequencer.clearCardEntities();
+                    // Update UI scores to reflect cleared state
+                    ui.updateDealerScore(logic.getDealer());
+                    for (Player p : logic.getPlayersList()) {
+                        ui.updatePlayerScore(p);
+                    }
+                    // Reset flag for next round
+                    cardReturnAnimationStarted = false;
+                } else {
+                    // Server still has cards, but animation is done - force sync removal
+                    Dealer localDealer = logic.getDealer();
+                    
+                    // Remove dealer cards that are no longer on server
+                    localDealer.m_currentCards.removeIf(card -> {
+                        boolean found = update.dealerCards.stream().anyMatch(ci -> ci.id == card.m_id);
+                        return !found;
+                    });
+                    
+                    // Remove player cards that are no longer on server
+                    for (PlayerInfo serverPlayer : update.players) {
+                        Player localPlayer = null;
+                        for (Player p : logic.getPlayersList()) {
+                            if (p.getName().equals(serverPlayer.name)) {
+                                localPlayer = p;
+                                break;
+                            }
+                        }
+                        
+                        if (localPlayer != null) {
+                            localPlayer.m_currentCards.removeIf(card -> {
+                                boolean found = serverPlayer.cards.stream().anyMatch(ci -> ci.id == card.m_id);
+                                return !found;
+                            });
+                        }
                     }
                 }
             }
-            playerIndex++;
+        }
+        
+        // Reset flag when starting a new round
+        if (state == GameState.STARTING || state == GameState.BETTING) {
+            cardReturnAnimationStarted = false;
+        }
+
+        // 6. Synchronize Cards and Queue Animations (only if not in FINISHING_ROUND)
+        if (state != GameState.FINISHING_ROUND && state != GameState.RESOLVING_BETS) {
+            // Check for new dealer cards
+            Dealer localDealer = logic.getDealer();
+            for (CardInfo serverCardInfo : update.dealerCards) {
+                if (!localDealer.hasCard(serverCardInfo.id)) {
+                    // New dealer card detected - add to local data and queue animation
+                    Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
+                    localDealer.addCard(newCard);
+                    pendingAnimations.add(new PendingAnimation(PendingAnimation.Type.DEALER, serverCardInfo, -1, null));
+                    ui.updateDealerScore(localDealer);
+                    break; // Only one new card per update
+                }
+            }
+
+            // Check for new player cards
+            int playerIndex = 0;
+            for (PlayerInfo serverPlayer : update.players) {
+                Player localPlayer = null;
+                for (Player p : logic.getPlayersList()) {
+                    if (p.getName().equals(serverPlayer.name)) {
+                        localPlayer = p;
+                        break;
+                    }
+                }
+
+                if (localPlayer != null) {
+                    // Check for new cards for this player
+                    for (CardInfo serverCardInfo : serverPlayer.cards) {
+                        if (!localPlayer.hasCard(serverCardInfo.id)) {
+                            // New player card detected - add to local data and queue animation
+                            Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
+                            localPlayer.addCard(newCard);
+                            pendingAnimations.add(new PendingAnimation(PendingAnimation.Type.PLAYER, serverCardInfo, playerIndex, serverPlayer.name));
+                            ui.updatePlayerScore(localPlayer);
+                            break; // Only one new card per player per update
+                        }
+                    }
+                }
+                playerIndex++;
+            }
+        } else {
+            // In FINISHING_ROUND or RESOLVING_BETS, synchronize card removal
+            Dealer localDealer = logic.getDealer();
+            
+            // Remove dealer cards that are no longer on server
+            localDealer.m_currentCards.removeIf(card -> {
+                boolean found = update.dealerCards.stream().anyMatch(ci -> ci.id == card.m_id);
+                return !found;
+            });
+            
+            // Remove player cards that are no longer on server
+            for (PlayerInfo serverPlayer : update.players) {
+                Player localPlayer = null;
+                for (Player p : logic.getPlayersList()) {
+                    if (p.getName().equals(serverPlayer.name)) {
+                        localPlayer = p;
+                        break;
+                    }
+                }
+                
+                if (localPlayer != null) {
+                    localPlayer.m_currentCards.removeIf(card -> {
+                        boolean found = serverPlayer.cards.stream().anyMatch(ci -> ci.id == card.m_id);
+                        return !found;
+                    });
+                }
+            }
         }
     }
 

@@ -60,13 +60,24 @@ public class Sequencer {
 
         for (Card c : cards) {
             Entity newCardEntity = ecs.findCardEntity(c.m_id);
-            Action moveCard = moveCardAction(newCardEntity, deckPosition, deckRotation,duration);
-            sequenceAction.add(moveCard);
+            // Create entity if it doesn't exist (safety measure for synced cards)
+            if (newCardEntity == null) {
+                newCardEntity = ecs.createCardEntity(c);
+            }
+            // Only add action if entity exists (should always exist after creation attempt)
+            if (newCardEntity != null) {
+                Action moveCard = moveCardAction(newCardEntity, deckPosition, deckRotation, duration);
+                sequenceAction.add(moveCard);
+            }
         }
         return sequenceAction;
     }
 
     public Action moveCardAction(Entity cardEntity, Vector2 position, float rotation, float duration) {
+        if (cardEntity == null) {
+            // Return a no-op action if entity is null
+            return new DelayAction(0f);
+        }
         ParallelAction p = new ParallelAction();
         Action moveAction = new MoveToAction(cardEntity, position, rotation, duration);
         Action playCardSound = new PlaySFXAction(audioManager, SoundType.CARD_DEAL, 0.95f);
