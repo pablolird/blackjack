@@ -105,24 +105,14 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     private void handleExitMatch() {
         if (game.gameClient != null) {
             // Send exit match request to server
+            // The server will send a response and close the connection
+            // We'll handle cleanup in onExitMatch() when we receive the response
             game.gameClient.sendExitMatchRequest();
-            
-            // Disconnect the client after sending the request
-            // The server will handle closing the connection
-            // We'll disconnect here to ensure clean exit
-            game.gameClient.dispose();
-            game.gameClient = null;
+        } else {
+            // Local game, just return to start screen
+            game.setScreen(new StartScreen(game));
+            dispose();
         }
-        
-        // If host, stop the server
-        if (isHost && game.gameServer != null) {
-            game.gameServer.dispose();
-            game.gameServer = null;
-        }
-        
-        // Return to start screen
-        game.setScreen(new StartScreen(game));
-        dispose();
     }
 
     // --- Overload for existing local game calls, passing dummy values ---
