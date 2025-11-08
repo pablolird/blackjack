@@ -263,6 +263,16 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         game.setScreen(new StartScreen(game));
         dispose();
     }
+    
+    @Override
+    public void onExitLobby(NetworkPacket.ExitLobbyResponse response) {
+        // Not used in GameScreen (only in lobby screens)
+    }
+    
+    @Override
+    public void onLobbyFull(NetworkPacket.LobbyFullResponse response) {
+        // Not used in GameScreen (only in lobby screens)
+    }
 
     @Override
     public void onGameStateUpdate(NetworkPacket.GameStateUpdate update) {

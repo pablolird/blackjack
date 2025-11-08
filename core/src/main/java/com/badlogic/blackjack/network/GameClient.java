@@ -28,6 +28,8 @@ public class GameClient {
         void onGameStateUpdate(NetworkPacket.GameStateUpdate update);
         void onExitMatch(NetworkPacket.ExitMatchResponse response);
         void onRestartMatch(NetworkPacket.RestartMatchResponse response);
+        void onExitLobby(NetworkPacket.ExitLobbyResponse response);
+        void onLobbyFull(NetworkPacket.LobbyFullResponse response);
     }
 
     public GameClient(String playerName) {
@@ -55,6 +57,9 @@ public class GameClient {
         client.getKryo().register(NetworkPacket.ExitMatchResponse.class);
         client.getKryo().register(NetworkPacket.RestartMatchRequest.class);
         client.getKryo().register(NetworkPacket.RestartMatchResponse.class);
+        client.getKryo().register(NetworkPacket.ExitLobbyRequest.class);
+        client.getKryo().register(NetworkPacket.ExitLobbyResponse.class);
+        client.getKryo().register(NetworkPacket.LobbyFullResponse.class);
         client.getKryo().register(NetworkPacket.GameStateUpdate.class);
     }
 
@@ -98,6 +103,20 @@ public class GameClient {
                     Gdx.app.postRunnable(() -> {
                         for (LobbyUpdateListener listener : listeners) {
                             listener.onRestartMatch(response);
+                        }
+                    });
+                } else if (object instanceof NetworkPacket.ExitLobbyResponse) {
+                    final NetworkPacket.ExitLobbyResponse response = (NetworkPacket.ExitLobbyResponse) object;
+                    Gdx.app.postRunnable(() -> {
+                        for (LobbyUpdateListener listener : listeners) {
+                            listener.onExitLobby(response);
+                        }
+                    });
+                } else if (object instanceof NetworkPacket.LobbyFullResponse) {
+                    final NetworkPacket.LobbyFullResponse response = (NetworkPacket.LobbyFullResponse) object;
+                    Gdx.app.postRunnable(() -> {
+                        for (LobbyUpdateListener listener : listeners) {
+                            listener.onLobbyFull(response);
                         }
                     });
                 }
@@ -145,6 +164,13 @@ public class GameClient {
         NetworkPacket.RestartMatchRequest request = new NetworkPacket.RestartMatchRequest();
         client.sendTCP(request);
         Gdx.app.log("GameClient", "Sent restart match request");
+    }
+    
+    public void sendExitLobbyRequest(String playerName) {
+        NetworkPacket.ExitLobbyRequest request = new NetworkPacket.ExitLobbyRequest();
+        request.playerName = playerName;
+        client.sendTCP(request);
+        Gdx.app.log("GameClient", "Sent exit lobby request");
     }
 
     /**

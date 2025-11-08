@@ -3,8 +3,10 @@ package com.badlogic.blackjack.lobby;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
@@ -56,6 +58,17 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
         root.add(playerCounterLabel).pad(10).row();
         root.add(new ScrollPane(playersListLabel, skin)).expand().fill().pad(20).row();
         root.add(new Label("Waiting for host to start match...", skin)).pad(20).row();
+        
+        // Add exit lobby button
+        TextButton exitLobbyButton = new TextButton("Exit Lobby", skin);
+        root.add(exitLobbyButton).width(200).height(50).pad(20).row();
+        
+        exitLobbyButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                handleExitLobby();
+            }
+        });
 
         // --- Networking Setup ---
         client = new GameClient(playerName);
@@ -67,6 +80,22 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
     private void transitionToGame(List<String> playerNames) {
         // Client transitions to GameScreen
         game.setScreen(new GameScreen(game, false, playerNames)); // Pass the player names
+        dispose();
+    }
+    
+    private void handleExitLobby() {
+        // Send exit lobby request to server
+        if (client != null) {
+            client.sendExitLobbyRequest(playerName);
+        }
+        
+        // Disconnect and return to start screen
+        if (game.gameClient != null) {
+            game.gameClient.dispose();
+            game.gameClient = null;
+        }
+        
+        game.setScreen(new com.badlogic.blackjack.StartScreen(game));
         dispose();
     }
 
@@ -109,6 +138,38 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
         Gdx.app.log("ClientLobbyScreen", "Received restart match response - starting game");
         game.setScreen(new com.badlogic.blackjack.GameScreen(game, false, response.playerNames));
         dispose();
+    }
+    
+    @Override
+    public void onExitLobby(NetworkPacket.ExitLobbyResponse response) {
+        Gdx.app.log("ClientLobbyScreen", "Received exit lobby response: hostExited=" + response.hostExited);
+        
+        // Disconnect and return to start screen
+        if (game.gameClient != null) {
+            game.gameClient.dispose();
+            game.gameClient = null;
+        }
+        
+        game.setScreen(new com.badlogic.blackjack.StartScreen(game));
+        dispose();
+    }
+    
+    @Override
+    public void onLobbyFull(NetworkPacket.LobbyFullResponse response) {
+        Gdx.app.log("ClientLobbyScreen", "Lobby is full - " + response.message);
+        
+        // Show message and return to start screen
+        statusLabel.setText("Lobby is full! Returning to start screen...");
+        
+        // Disconnect after a short delay
+        Gdx.app.postRunnable(() -> {
+            if (game.gameClient != null) {
+                game.gameClient.dispose();
+                game.gameClient = null;
+            }
+            game.setScreen(new com.badlogic.blackjack.StartScreen(game));
+            dispose();
+        });
     }
 
     @Override

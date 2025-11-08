@@ -66,6 +66,17 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         root.add(playerCounterLabel).pad(10).row();
         root.add(new ScrollPane(playersListLabel, skin)).expand().fill().pad(20).row();
         root.add(startGameButton).width(200).height(50).pad(20).row();
+        
+        // Add exit lobby button
+        TextButton exitLobbyButton = new TextButton("Exit Lobby", skin);
+        root.add(exitLobbyButton).width(200).height(50).pad(20).row();
+        
+        exitLobbyButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                handleExitLobby();
+            }
+        });
 
         // Host can't start if they are the only one (optional rule)
         startGameButton.setDisabled(true);
@@ -119,6 +130,16 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         game.setScreen(new GameScreen(game, true, playerNames));
         dispose();
     }
+    
+    private void handleExitLobby() {
+        // Send exit lobby request to server (host's own server)
+        // The server will process it and send ExitLobbyResponse
+        // We'll handle cleanup in onExitLobby() when we receive the response
+        if (client != null) {
+            client.sendExitLobbyRequest(hostPlayerName);
+        }
+        // Don't dispose here - wait for server response to avoid race condition
+    }
 
     @Override
     public void onLobbyUpdate(NetworkPacket.LobbyUpdate update) {
@@ -167,6 +188,35 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         Gdx.app.log("HostLobbyScreen", "Received restart match response - starting game");
         game.setScreen(new com.badlogic.blackjack.GameScreen(game, true, response.playerNames));
         dispose();
+    }
+    
+    @Override
+    public void onExitLobby(NetworkPacket.ExitLobbyResponse response) {
+        Gdx.app.log("HostLobbyScreen", "Received exit lobby response: hostExited=" + response.hostExited);
+        
+        // Remove listener before disposing to prevent issues
+        if (client != null) {
+            client.removeLobbyUpdateListener(this);
+        }
+        
+        // Disconnect client first
+        if (game.gameClient != null) {
+            game.gameClient.dispose();
+            game.gameClient = null;
+        }
+        
+        // Server is already stopping itself in handleExitLobbyRequest
+        // Just clear the reference - don't try to dispose it again
+        // The server.stop() was called asynchronously, so we just null the reference
+        game.gameServer = null;
+        
+        game.setScreen(new com.badlogic.blackjack.StartScreen(game));
+        dispose();
+    }
+    
+    @Override
+    public void onLobbyFull(NetworkPacket.LobbyFullResponse response) {
+        // Not used in HostLobbyScreen (host can't be rejected)
     }
 
     @Override

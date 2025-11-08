@@ -61,6 +61,9 @@ public class GameServer implements GameStateListener {
         server.getKryo().register(NetworkPacket.ExitMatchResponse.class);
         server.getKryo().register(NetworkPacket.RestartMatchRequest.class);
         server.getKryo().register(NetworkPacket.RestartMatchResponse.class);
+        server.getKryo().register(NetworkPacket.ExitLobbyRequest.class);
+        server.getKryo().register(NetworkPacket.ExitLobbyResponse.class);
+        server.getKryo().register(NetworkPacket.LobbyFullResponse.class);
         server.getKryo().register(NetworkPacket.GameStateUpdate.class);
     }
 
@@ -89,7 +92,12 @@ public class GameServer implements GameStateListener {
                         Gdx.app.log("GameServer", "Registered player: " + finalName + " (Total: " + connectedPlayers.size() + ")");
                         sendLobbyUpdate();
                     } else {
-                        Gdx.app.log("GameServer", "Lobby full. Rejecting connection: " + packet.name);
+                        // Lobby is full - notify the client before closing
+                        Gdx.app.log("GameServer", "Lobby full. Notifying and rejecting connection: " + packet.name);
+                        NetworkPacket.LobbyFullResponse response = new NetworkPacket.LobbyFullResponse();
+                        response.message = "Lobby is full";
+                        connection.sendTCP(response);
+                        // Give a moment for the message to be sent, then close
                         connection.close();
                     }
                 } else if (object instanceof NetworkPacket.ExitMatchRequest) {
@@ -104,6 +112,12 @@ public class GameServer implements GameStateListener {
                     // Only host can restart
                     if (playerName != null && playerName.equals(hostPlayerName)) {
                         handleRestartMatchRequest();
+                    }
+                } else if (object instanceof NetworkPacket.ExitLobbyRequest) {
+                    NetworkPacket.ExitLobbyRequest request = (NetworkPacket.ExitLobbyRequest) object;
+                    String playerName = connectedPlayers.get(connection.getID());
+                    if (playerName != null && playerName.equals(request.playerName)) {
+                        handleExitLobbyRequest(playerName, connection);
                     }
                 } else if (object instanceof NetworkPacket.PlayerAction) {
                     // --- MODIFIED: Handle Game Actions ---
@@ -460,6 +474,68 @@ public class GameServer implements GameStateListener {
             }
             rebuildPlayerIndexMap();
             sendGameStateUpdate();
+        }
+    }
+    
+    private void handleExitLobbyRequest(String playerName, Connection connection) {
+        if (playerName == null) return;
+        
+        boolean isHost = playerName.equals(hostPlayerName);
+        
+        if (isHost) {
+            // Host exited lobby - close all connections and stop server
+            Gdx.app.log("GameServer", "Host " + playerName + " exited lobby - closing all connections");
+            NetworkPacket.ExitLobbyResponse response = new NetworkPacket.ExitLobbyResponse();
+            response.hostExited = true;
+            response.exitedPlayerName = playerName;
+            
+            // Send response to all clients (including host's own client)
+            try {
+                server.sendToAllTCP(response);
+            } catch (Exception e) {
+                Gdx.app.error("GameServer", "Error sending exit lobby response: " + e.getMessage());
+            }
+            
+            // Close all connections and stop server
+            // Do this in postRunnable to avoid blocking the network thread
+            Gdx.app.postRunnable(() -> {
+                try {
+                    // Close all connections first
+                    List<Connection> connections = new ArrayList<>(server.getConnections());
+                    for (Connection conn : connections) {
+                        try {
+                            conn.close();
+                        } catch (Exception e) {
+                            // Ignore errors when closing connections
+                        }
+                    }
+                    
+                    // Stop the server
+                    server.stop();
+                    Gdx.app.log("GameServer", "Server stopped after host exit lobby");
+                } catch (Exception e) {
+                    Gdx.app.error("GameServer", "Error stopping server: " + e.getMessage());
+                }
+            });
+        } else {
+            // Non-host exited lobby - remove them
+            Gdx.app.log("GameServer", "Non-host " + playerName + " exited lobby");
+            
+            // Send exit response before closing connection
+            NetworkPacket.ExitLobbyResponse response = new NetworkPacket.ExitLobbyResponse();
+            response.hostExited = false;
+            response.exitedPlayerName = playerName;
+            connection.sendTCP(response);
+            
+            // Remove from connection tracking
+            connectedPlayers.remove(connection.getID());
+            playerNameToIndex.remove(playerName);
+            
+            // Close the connection
+            connection.close();
+            
+            // Update lobby
+            sendLobbyUpdate();
         }
     }
     

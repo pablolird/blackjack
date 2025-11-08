@@ -26,6 +26,29 @@ public class NetworkPacket {
         public ArrayList<String> playerNames; // List of all connected player names
         // --- END OF ADDED FIELDS ---
     }
+    
+    /**
+     * Sent from a Client to the Server to request exiting the lobby.
+     */
+    public static class ExitLobbyRequest {
+        public String playerName;
+    }
+    
+    /**
+     * Sent from the Server to Clients to notify them about lobby exit.
+     * If host exits, all clients receive this. If non-host exits, only that client receives this.
+     */
+    public static class ExitLobbyResponse {
+        public boolean hostExited; // true if host exited, false if non-host exited
+        public String exitedPlayerName;
+    }
+    
+    /**
+     * Sent from the Server to a Client to notify them that the lobby is full.
+     */
+    public static class LobbyFullResponse {
+        public String message; // "Lobby is full"
+    }
 
     /**
      * Sent from the Host to all Clients to tell them the game is starting.
