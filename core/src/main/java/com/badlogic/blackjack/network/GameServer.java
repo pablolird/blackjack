@@ -28,9 +28,11 @@ public class GameServer implements GameStateListener {
     // Map connection ID to Player Name
     private final Map<Integer, String> connectedPlayers = new HashMap<>();
     private final Map<String, Integer> playerNameToIndex = new HashMap<>();
+    private String hostPlayerName; // Track the host player
     private BlackjackLogic gameLogic;
     private float animationTimer = 0f;
     private static final float ANIMATION_DELAY = 0.4f; // Time to wait for animations (slightly longer than animation duration)
+    private final List<String> queuedPlayerRemovals = new ArrayList<>(); // Players to remove at safe phase
 
     public GameServer(String roomName, int maxPlayers) {
         this.roomName = roomName;
@@ -42,16 +44,22 @@ public class GameServer implements GameStateListener {
 
     private void registerPackets() {
         // Must register all classes that will be sent over the network
+        // Register ArrayList first (Kryo needs this for collections)
+        server.getKryo().register(ArrayList.class);
+        
+        // Register nested packet classes before the ones that use them
+        server.getKryo().register(NetworkPacket.CardInfo.class);
+        server.getKryo().register(NetworkPacket.PlayerInfo.class);
+        
+        // Register packet classes
         server.getKryo().register(NetworkPacket.RegisterPlayer.class);
         server.getKryo().register(NetworkPacket.LobbyUpdate.class);
         server.getKryo().register(NetworkPacket.StartGame.class);
         server.getKryo().register(NetworkPacket.PlayerActionType.class); // Register the enum
         server.getKryo().register(NetworkPacket.PlayerAction.class);
+        server.getKryo().register(NetworkPacket.ExitMatchRequest.class);
+        server.getKryo().register(NetworkPacket.ExitMatchResponse.class);
         server.getKryo().register(NetworkPacket.GameStateUpdate.class);
-
-        server.getKryo().register(NetworkPacket.CardInfo.class);
-        server.getKryo().register(NetworkPacket.PlayerInfo.class);
-        server.getKryo().register(ArrayList.class);
     }
 
     private void addListeners() {
@@ -68,11 +76,22 @@ public class GameServer implements GameStateListener {
                     // Check if lobby is full
                     if (connectedPlayers.size() < maxPlayers) {
                         connectedPlayers.put(connection.getID(), packet.name);
+                        // First player to connect is the host
+                        if (hostPlayerName == null) {
+                            hostPlayerName = packet.name;
+                            Gdx.app.log("GameServer", "Host player set: " + hostPlayerName);
+                        }
                         Gdx.app.log("GameServer", "Registered player: " + packet.name + " (Total: " + connectedPlayers.size() + ")");
                         sendLobbyUpdate();
                     } else {
                         Gdx.app.log("GameServer", "Lobby full. Rejecting connection: " + packet.name);
                         connection.close();
+                    }
+                } else if (object instanceof NetworkPacket.ExitMatchRequest) {
+                    NetworkPacket.ExitMatchRequest request = (NetworkPacket.ExitMatchRequest) object;
+                    String playerName = connectedPlayers.get(connection.getID());
+                    if (playerName != null && playerName.equals(request.playerName)) {
+                        handleExitMatchRequest(playerName, connection);
                     }
                 } else if (object instanceof NetworkPacket.PlayerAction) {
                     // --- MODIFIED: Handle Game Actions ---
@@ -139,8 +158,8 @@ public class GameServer implements GameStateListener {
                 String playerName = connectedPlayers.remove(connection.getID());
                 if (playerName != null) {
                     Gdx.app.log("GameServer", "Player disconnected: " + playerName);
-                    playerNameToIndex.remove(playerName); // Keep the map clean
-                    sendLobbyUpdate();
+                    // Handle disconnection same as exit match
+                    handleExitMatchRequest(playerName, connection);
                 }
             }
         });
@@ -230,8 +249,14 @@ public class GameServer implements GameStateListener {
             case DEALING_PLAYERS:
             case ANIMATIONS_IN_PROGRESS:
             case DEALER_TURN:
+                gameLogic.update(delta);
+                break;
             case RESOLVING_BETS:
             case FINISHING_ROUND:
+                // Process queued player removals at safe phase
+                processQueuedPlayerRemovals();
+                gameLogic.update(delta);
+                break;
             case STARTING: // STARTING auto-transitions to BETTING
                 gameLogic.update(delta);
                 break;
@@ -337,6 +362,58 @@ public class GameServer implements GameStateListener {
 
         server.sendToAllTCP(update);
         Gdx.app.log("GameServer", "Broadcasted state: " + update.currentGameState + " (Current Player: " + update.currentPlayerName + ")");
+    }
+    
+    private void handleExitMatchRequest(String playerName, Connection connection) {
+        if (playerName == null) return;
+        
+        boolean isHost = playerName.equals(hostPlayerName);
+        
+        if (isHost) {
+            // Host exited - send exit response to all clients
+            Gdx.app.log("GameServer", "Host " + playerName + " exited - ending match for all players");
+            NetworkPacket.ExitMatchResponse response = new NetworkPacket.ExitMatchResponse();
+            response.hostExited = true;
+            response.exitedPlayerName = playerName;
+            server.sendToAllTCP(response);
+        } else {
+            // Non-host exited - queue for removal at safe phase
+            Gdx.app.log("GameServer", "Non-host " + playerName + " exited - queuing for removal");
+            if (!queuedPlayerRemovals.contains(playerName)) {
+                queuedPlayerRemovals.add(playerName);
+            }
+            
+            // Send exit response only to the exiting player
+            NetworkPacket.ExitMatchResponse response = new NetworkPacket.ExitMatchResponse();
+            response.hostExited = false;
+            response.exitedPlayerName = playerName;
+            connection.sendTCP(response);
+            
+            // Remove from connection tracking
+            connectedPlayers.remove(connection.getID());
+            playerNameToIndex.remove(playerName);
+            
+            // If game hasn't started, update lobby
+            if (gameLogic == null) {
+                sendLobbyUpdate();
+            }
+        }
+    }
+    
+    private void processQueuedPlayerRemovals() {
+        if (queuedPlayerRemovals.isEmpty() || gameLogic == null) return;
+        
+        GameState currentState = gameLogic.getGameState();
+        // Safe to remove players after resolving bets
+        if (currentState == GameState.RESOLVING_BETS || currentState == GameState.FINISHING_ROUND) {
+            for (String playerName : new ArrayList<>(queuedPlayerRemovals)) {
+                Gdx.app.log("GameServer", "Removing queued player: " + playerName);
+                gameLogic.removePlayerByName(playerName);
+                queuedPlayerRemovals.remove(playerName);
+            }
+            rebuildPlayerIndexMap();
+            sendGameStateUpdate();
+        }
     }
 
     public void dispose() {

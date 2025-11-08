@@ -152,6 +152,14 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         // Host client received its own start packet.
         transitionToGame(start.maxPlayers, start.playerNames);
     }
+    
+    @Override
+    public void onExitMatch(NetworkPacket.ExitMatchResponse response) {
+        // If match ended, return to start screen
+        Gdx.app.log("HostLobbyScreen", "Received exit match response - returning to start screen");
+        game.setScreen(new com.badlogic.blackjack.StartScreen(game));
+        dispose();
+    }
 
     @Override
     public void show() { }

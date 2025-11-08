@@ -152,12 +152,28 @@ public class UI {
 
         // 3. Build the Pause Menu (initially hidden)
         pauseMenu = new Window("Pause", skin);
+        pauseMenu.pad(20);
+        
+        TextButton exitMatchButton = new TextButton("Exit Match", skin);
+        pauseMenu.add(exitMatchButton);
+        pauseMenu.row();
+        
         TextButton quitButton = new TextButton("Quit Game", skin);
         pauseMenu.add(quitButton);
         pauseMenu.pack(); // Size the window to its contents
         pauseMenu.setPosition(stage.getWidth() / 2 - pauseMenu.getWidth() / 2, stage.getHeight() / 2 - pauseMenu.getHeight() / 2);
         stage.addActor(pauseMenu);
         pauseMenu.setVisible(false); // Hide it by default
+        
+        // Exit Match button listener - will be set by GameScreen
+        exitMatchButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                if (gameClient != null && game.exitMatchCallback != null) {
+                    game.exitMatchCallback.onExitMatch();
+                }
+            }
+        });
 
         buildLayout(bl.playersList);
 

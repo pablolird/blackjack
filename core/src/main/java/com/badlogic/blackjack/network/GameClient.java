@@ -26,6 +26,7 @@ public class GameClient {
         void onLobbyUpdate(NetworkPacket.LobbyUpdate update);
         void onGameStart(NetworkPacket.StartGame start);
         void onGameStateUpdate(NetworkPacket.GameStateUpdate update);
+        void onExitMatch(NetworkPacket.ExitMatchResponse response);
     }
 
     public GameClient(String playerName) {
@@ -36,15 +37,22 @@ public class GameClient {
     }
 
     private void registerPackets() {
+        // Register ArrayList first (Kryo needs this for collections)
+        client.getKryo().register(ArrayList.class);
+        
+        // Register nested packet classes before the ones that use them
+        client.getKryo().register(NetworkPacket.CardInfo.class);
+        client.getKryo().register(NetworkPacket.PlayerInfo.class);
+        
+        // Register packet classes
         client.getKryo().register(NetworkPacket.RegisterPlayer.class);
         client.getKryo().register(NetworkPacket.LobbyUpdate.class);
         client.getKryo().register(NetworkPacket.StartGame.class);
         client.getKryo().register(NetworkPacket.PlayerActionType.class);
         client.getKryo().register(NetworkPacket.PlayerAction.class);
+        client.getKryo().register(NetworkPacket.ExitMatchRequest.class);
+        client.getKryo().register(NetworkPacket.ExitMatchResponse.class);
         client.getKryo().register(NetworkPacket.GameStateUpdate.class);
-        client.getKryo().register(NetworkPacket.CardInfo.class);
-        client.getKryo().register(NetworkPacket.PlayerInfo.class);
-        client.getKryo().register(ArrayList.class);
     }
 
     private void addListeners() {
@@ -75,12 +83,22 @@ public class GameClient {
                         }
                     });
                     // --- END NEW ---
+                } else if (object instanceof NetworkPacket.ExitMatchResponse) {
+                    final NetworkPacket.ExitMatchResponse response = (NetworkPacket.ExitMatchResponse) object;
+                    Gdx.app.postRunnable(() -> {
+                        for (LobbyUpdateListener listener : listeners) {
+                            listener.onExitMatch(response);
+                        }
+                    });
                 }
             }
 
             @Override
             public void disconnected(Connection connection) {
                 Gdx.app.log("GameClient", "Disconnected from server.");
+                // Treat disconnection as exit match - notify listeners
+                // The server will handle sending ExitMatchResponse if needed
+                // For now, we'll let the server handle it through the disconnect handler
             }
         });
     }
@@ -101,6 +119,13 @@ public class GameClient {
         sendAction(type, 0);
     }
     // --- END NEW ---
+    
+    public void sendExitMatchRequest() {
+        NetworkPacket.ExitMatchRequest request = new NetworkPacket.ExitMatchRequest();
+        request.playerName = this.playerName;
+        client.sendTCP(request);
+        Gdx.app.log("GameClient", "Sent exit match request");
+    }
 
     /**
      * Attempts to connect to the server and automatically starts the client thread.

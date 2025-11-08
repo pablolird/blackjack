@@ -87,4 +87,21 @@ public class NetworkPacket {
         public ArrayList<PlayerInfo> players; // List of all player states
         public ArrayList<CardInfo> dealerCards; // Dealer's hand
     }
+    
+    /**
+     * Sent from a Client to the Server to request exiting the match.
+     */
+    public static class ExitMatchRequest {
+        public String playerName;
+    }
+    
+    /**
+     * Sent from the Server to Clients to notify them to return to start screen.
+     * If host exits, all clients receive this.
+     * If non-host exits, only that client receives this.
+     */
+    public static class ExitMatchResponse {
+        public boolean hostExited; // true if host exited, false if non-host exited
+        public String exitedPlayerName;
+    }
 }

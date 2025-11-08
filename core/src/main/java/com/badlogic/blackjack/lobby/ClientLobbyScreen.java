@@ -94,6 +94,14 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
     public void onGameStateUpdate(NetworkPacket.GameStateUpdate update) {
         // The Lobby Screen does not care about game state updates, so we do nothing.
     }
+    
+    @Override
+    public void onExitMatch(NetworkPacket.ExitMatchResponse response) {
+        // If host exited or match ended, return to start screen
+        Gdx.app.log("ClientLobbyScreen", "Received exit match response - returning to start screen");
+        game.setScreen(new com.badlogic.blackjack.StartScreen(game));
+        dispose();
+    }
 
     @Override
     public void show() { }

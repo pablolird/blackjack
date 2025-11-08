@@ -52,6 +52,8 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     }
     private final List<PendingAnimation> pendingAnimations = new ArrayList<>();
     private boolean cardReturnAnimationStarted = false;
+    private float resolvingBetsDelay = 0f;
+    private static final float RESOLVING_BETS_DELAY_TIME = 2.0f; // 2 second delay to view results
 
     public GameScreen(Main game, boolean isHost, List<String> playerNames) {
         this.game = game;
@@ -84,6 +86,20 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         // Use constants from Main
         ecs.createBoardEntity(Main.WORLD_WIDTH, Main.WORLD_HEIGHT);
         audioManager.playMusic(assets.bgMusic1, 0f);
+        
+        // Set up exit match callback
+        game.exitMatchCallback = this::handleExitMatch;
+    }
+    
+    private void handleExitMatch() {
+        if (game.gameClient != null) {
+            // Send exit match request to server
+            game.gameClient.sendExitMatchRequest();
+        } else {
+            // Local game, just return to start screen
+            game.setScreen(new StartScreen(game));
+            dispose();
+        }
     }
 
     // --- Overload for existing local game calls, passing dummy values ---
@@ -106,17 +122,27 @@ public class GameScreen implements Screen, LobbyUpdateListener {
             ui.togglePauseMenu();
         }
 
-        if (!ui.isPaused()) {
-            // If host, update server logic (handles card dealing and state management)
-            if (isHost && gameServer != null) {
-                gameServer.update(delta);
-            }
-            
-            sequencer.update(delta); // Sequencer runs on all clients for smooth animations
-            
-            // Process pending animations one at a time when sequencer is not busy
-            processPendingAnimations();
+        // Game logic continues even when pause menu is open (multiplayer)
+        // If host, update server logic (handles card dealing and state management)
+        if (isHost && gameServer != null) {
+            gameServer.update(delta);
         }
+        
+        sequencer.update(delta); // Sequencer runs on all clients for smooth animations
+        
+        // Handle RESOLVING_BETS delay and animation on clients
+        if (resolvingBetsDelay > 0) {
+            resolvingBetsDelay -= delta;
+            if (resolvingBetsDelay <= 0 && !cardReturnAnimationStarted) {
+                // Delay complete, start card return animation
+                sequencer.moveCardsToDeck(logic.getPlayersList(), logic.getDealer());
+                cardReturnAnimationStarted = true;
+                Gdx.app.log("GameScreen", "Started card return animation");
+            }
+        }
+        
+        // Process pending animations one at a time when sequencer is not busy
+        processPendingAnimations();
 
         ecs.update(delta);
         ui.update(delta);
@@ -176,6 +202,15 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     @Override
     public void onGameStart(NetworkPacket.StartGame start) {
         // Not used in GameScreen
+    }
+    
+    @Override
+    public void onExitMatch(NetworkPacket.ExitMatchResponse response) {
+        Gdx.app.log("GameScreen", "Received exit match response: hostExited=" + response.hostExited + ", player=" + response.exitedPlayerName);
+        
+        // Return to start screen
+        game.setScreen(new StartScreen(game));
+        dispose();
     }
 
     @Override
@@ -271,15 +306,16 @@ public class GameScreen implements Screen, LobbyUpdateListener {
                 for (Player p : logic.getPlayersList()) {
                     p.reset();
                 }
-                sequencer.clearCardEntities();
-                // Update UI scores to reflect cleared state
-                ui.updateDealerScore(localDealer);
-                for (Player p : logic.getPlayersList()) {
-                    ui.updatePlayerScore(p);
-                }
-                cardReturnAnimationStarted = false;
-            }
-        }
+                   sequencer.clearCardEntities();
+                   // Update UI scores to reflect cleared state
+                   ui.updateDealerScore(localDealer);
+                   for (Player p : logic.getPlayersList()) {
+                       ui.updatePlayerScore(p);
+                   }
+                   cardReturnAnimationStarted = false;
+                   resolvingBetsDelay = 0f;
+               }
+           }
 
         // 3. Highlight the current player
         if (update.currentPlayerIndex >= 0 && update.currentPlayerIndex < logic.getPlayersList().size()) {
@@ -289,13 +325,26 @@ public class GameScreen implements Screen, LobbyUpdateListener {
             ui.updateCurrentPlayerColor(null); // No player is active, unhighlight all
         }
 
-        // 4. Handle RESOLVING_BETS state - animation is started by BlackjackLogic after delay
-        // The delay allows players to see the dealer's cards and bet results
+        // 4. Handle RESOLVING_BETS state - start delay and animation on clients
+        if (state == GameState.RESOLVING_BETS) {
+            // Start delay timer if not already started
+            if (resolvingBetsDelay <= 0 && !cardReturnAnimationStarted) {
+                resolvingBetsDelay = RESOLVING_BETS_DELAY_TIME;
+                Gdx.app.log("GameScreen", "Started RESOLVING_BETS delay timer");
+            }
+        } else {
+            // Reset delay and flag when not in RESOLVING_BETS
+            resolvingBetsDelay = 0f;
+            if (state != GameState.FINISHING_ROUND) {
+                cardReturnAnimationStarted = false;
+            }
+        }
 
         // 5. Handle FINISHING_ROUND state - clear cards when server indicates they're cleared
         if (state == GameState.FINISHING_ROUND) {
             // Wait for animation to complete, then clear cards
-            if (!sequencer.isBusy()) {
+            // Make sure card return animation has finished before clearing
+            if (!sequencer.isBusy() && cardReturnAnimationStarted) {
                 // Check if server has cleared cards (empty card lists)
                 if (update.dealerCards.isEmpty() && update.players.stream().allMatch(p -> p.cards.isEmpty())) {
                     // Server has cleared cards, clear local state

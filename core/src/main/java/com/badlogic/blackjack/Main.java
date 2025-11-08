@@ -27,6 +27,12 @@ public class Main extends Game {
     public GameClient gameClient;
     public GameServer gameServer; // NEW FIELD: Store the server instance
     // --- END MODIFIED ---
+    
+    // Exit match callback interface
+    public interface ExitMatchCallback {
+        void onExitMatch();
+    }
+    public ExitMatchCallback exitMatchCallback;
 
     // The old 'private BlackjackGame game;' field has been removed.
 
