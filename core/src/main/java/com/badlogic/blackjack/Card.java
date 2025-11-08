@@ -23,6 +23,27 @@ public class Card {
         }
     }
 
+    // Constructor for network synchronization - allows setting a specific ID
+    public Card(int id, String rank, String suit) {
+        this.m_id = id;
+        // Update nextId to avoid conflicts
+        if (id >= nextId) {
+            nextId = id + 1;
+        }
+        this.m_rank = rank;
+        this.m_suit = suit;
+
+        if (rank.equals("Q") || rank.equals("J") || rank.equals("K")) {
+            this.m_value = 10;
+        }
+        else if (rank.equals("A")) {
+            this.m_value = 11;
+        }
+        else {
+            this.m_value = Integer.parseInt(rank);
+        }
+    }
+
     public String getSuit() {
         return m_suit;
     }

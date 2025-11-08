@@ -29,6 +29,8 @@ public class GameServer implements GameStateListener {
     private final Map<Integer, String> connectedPlayers = new HashMap<>();
     private final Map<String, Integer> playerNameToIndex = new HashMap<>();
     private BlackjackLogic gameLogic;
+    private float animationTimer = 0f;
+    private static final float ANIMATION_DELAY = 0.4f; // Time to wait for animations (slightly longer than animation duration)
 
     public GameServer(String roomName, int maxPlayers) {
         this.roomName = roomName;
@@ -183,6 +185,52 @@ public class GameServer implements GameStateListener {
         // This is called by gameLogic.notifyStateChanged()
         Gdx.app.log("GameServer", "Logic state changed, broadcasting update...");
         sendGameStateUpdate();
+        
+        // For animation states, we need to wait before continuing
+        GameState state = gameLogic.getGameState();
+        if (state == GameState.ANIMATIONS_IN_PROGRESS || 
+            state == GameState.DEALING_DEALER || 
+            state == GameState.DEALING_PLAYERS) {
+            animationTimer = ANIMATION_DELAY;
+        }
+    }
+    
+    /**
+     * Updates the server's game logic. Should be called periodically (e.g., from GameScreen render loop if host).
+     * For animation states, this handles the delay before continuing.
+     */
+    public void update(float delta) {
+        if (gameLogic == null) return;
+        
+        GameState state = gameLogic.getGameState();
+        
+        // Handle animation delay
+        if (animationTimer > 0) {
+            animationTimer -= delta;
+            if (animationTimer <= 0) {
+                // Animation delay complete, continue game logic
+                gameLogic.update(delta);
+            }
+            return;
+        }
+        
+        // Auto-advance certain states
+        switch (state) {
+            case DEALING_DEALER:
+            case DEALING_PLAYERS:
+            case ANIMATIONS_IN_PROGRESS:
+            case DEALER_TURN:
+            case RESOLVING_BETS:
+            case FINISHING_ROUND:
+            case STARTING: // STARTING auto-transitions to BETTING
+                gameLogic.update(delta);
+                break;
+            case BETTING:
+            case PLAYER_TURN:
+            case GAME_OVER:
+                // These states require player input or are final, so we stop ticking.
+                break;
+        }
     }
 
     public void sendGameStateUpdate() {

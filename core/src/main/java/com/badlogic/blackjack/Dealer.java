@@ -21,6 +21,15 @@ public class Dealer {
         this.m_currentCards.clear();
     }
 
+    public boolean hasCard(int cardId) {
+        for (Card c : m_currentCards) {
+            if (c.m_id == cardId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public int totalValue() {
         int totalValue = 0;
         int aceCount = 0;

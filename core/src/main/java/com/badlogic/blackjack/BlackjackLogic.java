@@ -282,51 +282,107 @@ public class BlackjackLogic {
                     dealer.addCard(deck.deal());
                     if(sequencer != null) sequencer.createDealCardToDealerAction(dealer); // Check for null
                     if(gameUI != null) gameUI.updateDealerScore(dealer); // Check for null
-                    gameState = GameState.DEALING_PLAYERS;
-                    // No notify, flows into next state
+                    gameState = GameState.ANIMATIONS_IN_PROGRESS;
+                    notifyStateChanged(); // NOTIFY - server will wait for animation
                 }
                 break;
-            case DEALING_PLAYERS:
+            case DEALING_PLAYERS: {
                 if(gameUI != null) gameUI.showPlayerActionPanel(false); // Check for null
 
-                // --- MODIFIED dealInitialCards logic ---
+                // Wait for sequencer if busy (client-side only)
                 if (sequencer != null && sequencer.isBusy()) {
-
-                    // --- FIX IS HERE ---
-                    // We must check if the index is valid *before* accessing anything with it.
                     if (current_playerIndex < playersList.size()) {
                         if(gameUI != null) gameUI.updatePlayerScore(playersList.get(current_playerIndex));
-
-                        // This check is now nested inside the safety check
-                        if (playersList.get(current_playerIndex).m_currentCards.size() > 1 ) {
-                            current_playerIndex++;
-                        }
                     }
-                    // If index is out of bounds (meaning we just finished the last player),
-                    // we simply return and wait for the sequencer to finish.
-                    // The logic below will handle the state transition.
-                    return;
-                    // --- END FIX ---
+                    return; // Wait for animation to complete
                 }
 
-                if (current_playerIndex == playersList.size()) {
-                    current_playerIndex=0;
+                // Check if we've completed dealing initial cards (all players have 2 cards)
+                boolean allPlayersHaveTwoCards = true;
+                for (Player p : playersList) {
+                    if (p.m_currentCards.size() < 2) {
+                        allPlayersHaveTwoCards = false;
+                        break;
+                    }
+                }
+
+                if (allPlayersHaveTwoCards) {
+                    // All players have 2 cards, move to dealer turn
+                    current_playerIndex = 0;
                     gameState = GameState.ANIMATIONS_IN_PROGRESS;
                     notifyStateChanged(); // NOTIFY
                     return;
                 }
 
+                // Reset index if we've gone through all players (start next round)
+                if (current_playerIndex >= playersList.size()) {
+                    current_playerIndex = 0;
+                }
+
+                // Deal card to current player if they need more cards
                 Player curentPlayer = playersList.get(current_playerIndex);
-                curentPlayer.addCard(deck.deal());
-                if(sequencer != null) sequencer.createDealCardAction(curentPlayer, current_playerIndex); // Check for null
-                // --- END MODIFIED ---
-                break;
-            case ANIMATIONS_IN_PROGRESS:
-                if (sequencer == null || !sequencer.isBusy()) { // Check for null
-                    gameState = GameState.PLAYER_TURN;
-                    notifyStateChanged(); // NOTIFY
+                if (curentPlayer.m_currentCards.size() < 2) {
+                    curentPlayer.addCard(deck.deal());
+                    if(sequencer != null) sequencer.createDealCardAction(curentPlayer, current_playerIndex); // Check for null
+                    current_playerIndex++;
+                    
+                    // Transition to ANIMATIONS_IN_PROGRESS to wait for animation
+                    gameState = GameState.ANIMATIONS_IN_PROGRESS;
+                    notifyStateChanged(); // NOTIFY - server will wait for animation
+                } else {
+                    // This player already has 2 cards, move to next player
+                    current_playerIndex++;
                 }
                 break;
+            }
+            case ANIMATIONS_IN_PROGRESS: {
+                if (sequencer == null || !sequencer.isBusy()) { // Check for null
+                    // Check if dealer is in the middle of their turn (has more than 1 card and value < 17)
+                    // This indicates we were dealing dealer cards
+                    boolean dealerInProgress = dealer.m_currentCards.size() > 1 && dealer.totalValue() < 17;
+                    
+                    if (dealerInProgress) {
+                        // Dealer still needs cards, go back to dealer turn
+                        gameState = GameState.DEALER_TURN;
+                        // Don't notify here - let the dealer turn state handle it
+                    } else {
+                        // Check if we're still dealing initial cards
+                        boolean allPlayersHaveTwoCards = true;
+                        for (Player p : playersList) {
+                            if (p.m_currentCards.size() < 2) {
+                                allPlayersHaveTwoCards = false;
+                                break;
+                            }
+                        }
+                        
+                        // Check if dealer has their first card
+                        boolean dealerHasCard = dealer.m_currentCards.size() > 0;
+                        
+                        // Check if dealer is done (has card and value >= 17, or was in dealer turn)
+                        boolean dealerDone = dealer.m_currentCards.size() > 1 && dealer.totalValue() >= 17;
+                        
+                        if (dealerDone) {
+                            // Dealer is done, resolve bets
+                            gameState = GameState.RESOLVING_BETS;
+                            notifyStateChanged(); // NOTIFY
+                        } else if (allPlayersHaveTwoCards && dealerHasCard) {
+                            // All players have 2 cards and dealer has 1 card, move to player turn
+                            current_playerIndex = 0;
+                            gameState = GameState.PLAYER_TURN;
+                            notifyStateChanged(); // NOTIFY
+                        } else if (!allPlayersHaveTwoCards) {
+                            // Still dealing cards to players, go back to dealing players
+                            gameState = GameState.DEALING_PLAYERS;
+                            // Don't notify here - let the dealing state handle it
+                        } else if (!dealerHasCard) {
+                            // Dealer doesn't have a card yet, go to dealing dealer
+                            gameState = GameState.DEALING_DEALER;
+                            // Don't notify here - let the dealing state handle it
+                        }
+                    }
+                }
+                break;
+            }
             case PLAYER_TURN:
                 if (gameUI != null && !gameUI.ActionPanelIsVisible()) // Check for null
                 {
@@ -342,7 +398,9 @@ public class BlackjackLogic {
                         dealer.addCard(deck.deal());
                         if(sequencer != null) sequencer.createDealCardToDealerAction(dealer); // Check for null
                         if(gameUI != null) gameUI.updateDealerScore(dealer); // Check for null
-                        // No notify, dealer might hit again
+                        // Transition to ANIMATIONS_IN_PROGRESS to wait for animation
+                        gameState = GameState.ANIMATIONS_IN_PROGRESS;
+                        notifyStateChanged(); // NOTIFY - server will wait for animation
                     }
                     else
                     {
