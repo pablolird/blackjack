@@ -16,6 +16,8 @@ public class BlackjackLogic {
     private boolean betsResolved = false;
     private float resolvingBetsDelay = 0f;
     private static final float RESOLVING_BETS_DELAY_TIME = 2.0f; // 2 second delay to view results
+    private float dealerTurnDelay = 0f;
+    private static final float DEALER_TURN_DELAY_TIME = 1.0f; // 1 second delay before dealer turn starts
 
     private GameStateListener stateListener;
 
@@ -90,7 +92,9 @@ public class BlackjackLogic {
 
     public void nextPlayer() {
         if (current_playerIndex==playersList.size()-1) {
+            // Last player finished, transition to dealer turn with delay
             gameState = GameState.DEALER_TURN;
+            dealerTurnDelay = DEALER_TURN_DELAY_TIME; // Start 1 second delay
             if(gameUI != null) gameUI.showPlayerActionPanel(false); // Check for null
             notifyStateChanged(); // NOTIFY
         }
@@ -263,6 +267,7 @@ public class BlackjackLogic {
                 // Reset player index just in case the last player was removed
                 current_playerIndex = 0;
                 betsResolved = false; // Reset flag for new round
+                dealerTurnDelay = 0f; // Reset dealer turn delay
                 gameState = GameState.BETTING;
                 if(gameUI != null) {
                     gameUI.showBettingPanel(true);
@@ -388,6 +393,15 @@ public class BlackjackLogic {
                 }
                 break;
             case DEALER_TURN:
+                // Wait for delay before starting dealer turn
+                if (dealerTurnDelay > 0) {
+                    dealerTurnDelay -= delta;
+                    if (dealerTurnDelay <= 0) {
+                        dealerTurnDelay = 0f; // Delay complete
+                    }
+                    return; // Wait for delay
+                }
+                
                 if(sequencer == null || !sequencer.isBusy()) // Check for null
                 {
                     if(dealer.totalValue() < 17)
