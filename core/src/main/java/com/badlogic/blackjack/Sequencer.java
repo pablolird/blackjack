@@ -112,7 +112,10 @@ public class Sequencer {
         Action playCardSound = new PlaySFXAction(audioManager, SoundType.CARD_DEAL, 0.95f);
         parallelAction.add(playCardSound);
 
-        this.actions.add(parallelAction);
+        // Add a delay between dealer deal cards to add tension to game
+        SequenceAction s = new SequenceAction(parallelAction,new DelayAction(2));
+
+        this.actions.add(s);
     }
 
     /**
