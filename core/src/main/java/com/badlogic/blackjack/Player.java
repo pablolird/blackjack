@@ -1,5 +1,5 @@
 package com.badlogic.blackjack;
-
+// Player class
 public class Player extends Dealer {
     private final String m_name;
     private final int m_id;
