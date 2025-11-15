@@ -18,7 +18,6 @@ public class Player extends Dealer {
         return this.m_name;
     }
 
-
     public int getBalance() {
         return m_balance;
     }
@@ -44,6 +43,14 @@ public class Player extends Dealer {
     public void addBalance(int amount)
     {
         this.m_balance += amount;
+    }
+
+    public void setBalance(int newBalance) {
+        this.m_balance = newBalance;
+    }
+
+    public void setCurrentBet(int newBet) {
+        this.m_currentBet = newBet;
     }
 
     public boolean isActive() {

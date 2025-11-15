@@ -14,16 +14,20 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 
+import com.badlogic.blackjack.lobby.HostLobbyScreen;
+import com.badlogic.blackjack.lobby.ClientLobbyScreen;
+
 public class StartScreen implements Screen {
     private Stage stage;
     private Skin skin; // Assumes you have a skin in assets
     private Texture background;
     private Table hostTable;
     private Table startTable;
-    private Table joinGameTable;
     private Table localTable;
+    private Table joinTable; // NEW TABLE FOR JOIN GAME
     private TextButtonStyle t1;
     private int depth = 0;
+    // test comment
 
     TextButton createButton(String text, Skin skin) {
         TextButton button = new TextButton(text, skin);
@@ -59,7 +63,7 @@ public class StartScreen implements Screen {
         createGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // This is the screen transition!
+                // SCREEN TRANSITION - LOCAL GAME STARTS IMMEDIATELY
                 game.setScreen(new GameScreen(game, maxPlayers.getSelected()));
                 dispose(); // Dispose this screen
             }
@@ -76,6 +80,60 @@ public class StartScreen implements Screen {
         });
 
         return table;
+    }
+
+    // --- NEW METHOD FOR JOIN GAME UI ---
+    Table joinGameLayout(Main game) {
+        Table joinTable = new Table();
+        joinTable.setFillParent(true);
+
+        // --- NEW ROW FOR PLAYER NAME ---
+        joinTable.row().padBottom(10f);
+        Label playerNameLabel = new Label("Your Name:", skin);
+        playerNameLabel.setWidth(100);
+        joinTable.add(playerNameLabel).align(Align.left).fill();
+
+        TextField playerNameField = new TextField("Guest", skin);
+        joinTable.add(playerNameField).fill();
+        // --- END NEW ROW ---
+
+        joinTable.row().padBottom(10f);
+        Label ipLabel = new Label("Host IP Address:", skin);
+        ipLabel.setWidth(100);
+        joinTable.add(ipLabel).align(Align.left).fill();
+
+        TextField ipAddressField = new TextField("127.0.0.1", skin);
+        joinTable.add(ipAddressField).fill();
+
+        joinTable.row().padTop(20f);
+
+        TextButton backButton = createButton("Back", skin);
+        joinTable.add(backButton).padRight(10f);
+
+        TextButton confirmButton = createButton("Confirm", skin);
+        joinTable.add(confirmButton).padLeft(10f);
+
+        backButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                joinTable.setVisible(false);
+                startTable.setVisible(true);
+                depth = 0;
+            }
+        });
+
+        confirmButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                // Transition to ClientLobbyScreen and start connection attempt
+                String ipAddress = ipAddressField.getText();
+                String playerName = playerNameField.getText(); // GET THE JOINING PLAYER NAME
+                game.setScreen(new ClientLobbyScreen(game, playerName, ipAddress)); // PASS PLAYER NAME
+                dispose();
+            }
+        });
+
+        return joinTable;
     }
 
     Table multiplayerScreenLayout(Main game) {
@@ -127,9 +185,8 @@ public class StartScreen implements Screen {
         joinGame.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // This is the screen transition!
                 startTable.setVisible(false);
-                joinGameTable.setVisible(true);
+                joinTable.setVisible(true); // SHOW NEW JOIN TABLE
                 depth=1;
             }
         });
@@ -150,47 +207,42 @@ public class StartScreen implements Screen {
         // hostTable.setDebug(true);
         hostTable.setFillParent(true);
 
+        // Host properties capture
+        TextField roomNameField = new TextField("My Blackjack Room",skin);
+        SelectBox<Integer> maxPlayersSelectBox = new SelectBox<>(skin);
+        maxPlayersSelectBox.setItems(2,3,4,5,6,7);
+        // --- NEW: Player Name Field ---
+        TextField playerNameField = new TextField("Host", skin);
+
         hostTable.row().padBottom(10f);
         Label roomName = new Label("Room name:", skin);
         hostTable.add(roomName).align(Align.left).fill();
-        TextField roomNameField = new TextField("",skin);
-        hostTable.add(roomNameField);
+        hostTable.add(roomNameField); // USE THE TEXT FIELD
 
+        // --- NEW ROW FOR PLAYER NAME ---
         hostTable.row().padBottom(10f);
-        Label roomPassword = new Label("Room password:", skin);
-        hostTable.add(roomPassword).align(Align.left).fill();
-        TextField roomPasswordField = new TextField("",skin);
-        hostTable.add(roomPasswordField);
+        Label playerNameLabel = new Label("Your Name:", skin);
+        hostTable.add(playerNameLabel).align(Align.left).fill();
+        hostTable.add(playerNameField).fill();
+        // --- END NEW ROW ---
 
         hostTable.row().padBottom(10f);
         Label maxPlayersLabel = new Label("Max number of players: ", skin);
         maxPlayersLabel.setWidth(100);
         hostTable.add(maxPlayersLabel).align(Align.left).fill();
-
-        SelectBox<Integer> maxPlayers = new SelectBox<>(skin);
-        maxPlayers.setItems(2,3,4,5,6,7);
-        hostTable.add(maxPlayers).fill();
+        hostTable.add(maxPlayersSelectBox).fill(); // USE THE SELECT BOX
         hostTable.row();
 
-        // Button container for Back and Refresh
+        // Button container for Back and Create Game
         Table buttonTable = new Table();
 
         TextButton backButton = createButton("Back", skin);
         buttonTable.add(backButton).padRight(10f);
 
-        TextButton refreshButton = createButton("Create Game", skin);
-        buttonTable.add(refreshButton).padLeft(10f);
+        TextButton createGameButton = createButton("Create Game", skin); // RENAMED FROM refreshButton
+        buttonTable.add(createGameButton).padLeft(10f);
 
         hostTable.add(buttonTable).padTop(20f).colspan(2);
-
-        refreshButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                // This is the screen transition!
-                game.setScreen(new GameScreen(game, maxPlayers.getSelected()));
-                dispose(); // Dispose this screen
-            }
-        });
 
         backButton.addListener(new ChangeListener() {
             @Override
@@ -200,153 +252,28 @@ public class StartScreen implements Screen {
                 depth = 0;
             }
         });
+
+        // --- CREATE GAME BUTTON LISTENER (MODIFIED) ---
+        createGameButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                String name = roomNameField.getText();
+                int max = maxPlayersSelectBox.getSelected();
+                String hostName = playerNameField.getText(); // GET THE HOST NAME
+
+                // Transition to HostLobbyScreen and start the server/client
+                game.setScreen(new HostLobbyScreen(game, hostName, name, max)); // PASS HOST NAME
+                dispose(); // Dispose this screen
+            }
+        });
+        // --- END CREATE GAME BUTTON LISTENER ---
+
         return hostTable;
     }
 
-    Table joinGameLayout(Main game) {
-        Table mainTable = new Table(skin);
-        mainTable.setFillParent(true);
-
-        // Title
-        Label titleLabel = new Label("Available Rooms", skin, "minecraft-font", Color.WHITE);
-        mainTable.add(titleLabel).padBottom(20f);
-        mainTable.row();
-
-        // Create header table
-        Table headerTable = new Table();
-//        headerTable.setDebug(true);
-
-        Label nameHeader = new Label("Room Name", skin);
-        nameHeader.setColor(Color.LIGHT_GRAY);
-        headerTable.add(nameHeader).width(200f).padLeft(10f).align(Align.left);
-
-        Label playersHeader = new Label("Players", skin);
-        playersHeader.setColor(Color.LIGHT_GRAY);
-        headerTable.add(playersHeader).width(70f).padLeft(10f);
-
-        Label pingHeader = new Label("Ping", skin);
-        pingHeader.setColor(Color.LIGHT_GRAY);
-        headerTable.add(pingHeader).width(50f).padLeft(10f);
-
-        Label lockHeader = new Label("", skin);
-        headerTable.add(lockHeader).width(220f).padLeft(10f);
-
-        Label actionHeader = new Label("", skin);
-        headerTable.add(actionHeader).padLeft(10f).padRight(10f);
-
-        mainTable.add(headerTable).padBottom(5f);
-        mainTable.row();
-
-        // Create a container for the scrollable list
-        Table roomListTable = new Table();
-        roomListTable.top();
-
-        // Add some demo rooms
-        addRoomComponent(roomListTable, "Bob's Room", 3, 7, 45, true);
-        addRoomComponent(roomListTable, "Pro Players Only", 6, 7, 120, true);
-        addRoomComponent(roomListTable, "Casual Game", 2, 7, 30, false);
-        addRoomComponent(roomListTable, "High Stakes", 5, 7, 80, true);
-        addRoomComponent(roomListTable, "Beginners Welcome", 1, 7, 25, false);
-        addRoomComponent(roomListTable, "Friday Night Cards", 4, 7, 55, false);
-        addRoomComponent(roomListTable, "VIP Room", 7, 7, 150, true);
-        addRoomComponent(roomListTable, "Quick Match", 2, 7, 20, false);
-        addRoomComponent(roomListTable, "Bob's Room", 3, 7, 45, true);
-        addRoomComponent(roomListTable, "Pro Players Only", 6, 7, 120, true);
-        addRoomComponent(roomListTable, "Casual Game", 2, 7, 30, false);
-        addRoomComponent(roomListTable, "High Stakes", 5, 7, 80, true);
-        addRoomComponent(roomListTable, "Beginners Welcome", 1, 7, 25, false);
-        addRoomComponent(roomListTable, "Friday Night Cards", 4, 7, 55, false);
-        addRoomComponent(roomListTable, "VIP Room", 7, 7, 150, true);
-        addRoomComponent(roomListTable, "Quick Match", 2, 7, 20, false);
-
-        // Create scroll pane
-        ScrollPane scrollPane = new ScrollPane(roomListTable, skin);
-        scrollPane.setFadeScrollBars(false);
-        scrollPane.setScrollingDisabled(true, false);
-
-        // Add scroll pane to main table with fixed size
-        mainTable.add(scrollPane).width(600f).height(400f).pad(10f);
-        mainTable.row();
-
-        // Button container for Back and Refresh
-        Table buttonTable = new Table();
-
-        TextButton backButton = createButton("Back", skin);
-        buttonTable.add(backButton).padRight(10f);
-
-        TextButton refreshButton = createButton("Refresh", skin);
-        buttonTable.add(refreshButton).padLeft(10f);
-
-        mainTable.add(buttonTable).padTop(20f);
-
-        refreshButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                System.out.println("Refreshing room list...");
-                // Here you would fetch the updated room list from the server
-            }
-        });
-
-        backButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                joinGameTable.setVisible(false);
-                startTable.setVisible(true);
-                depth = 0;
-            }
-        });
-
-        return mainTable;
-    }
-
-    private void addRoomComponent(Table table, String roomName, int currentPlayers,
-                                  int maxPlayers, int ping, boolean hasPassword) {
-        Table roomComponent = new Table();
-        // roomComponent.setBackground(skin.getDrawable("default-round"));
-
-        // Room name
-        Label nameLabel = new Label(roomName, skin);
-        nameLabel.setColor(Color.WHITE);
-        roomComponent.add(nameLabel).width(200f).padLeft(10f).align(Align.left);
-
-        // Player count
-        Label playersLabel = new Label(currentPlayers + "/" + maxPlayers, skin);
-        playersLabel.setColor(Color.LIGHT_GRAY);
-        roomComponent.add(playersLabel).width(60f).padLeft(10f);
-
-        // Ping/Latency
-        Label pingLabel = new Label(ping + "ms", skin);
-        Color pingColor = ping < 50 ? Color.GREEN : ping < 100 ? Color.YELLOW : Color.RED;
-        pingLabel.setColor(pingColor);
-        roomComponent.add(pingLabel).width(60f).padLeft(10f);
-
-        // Lock icon (represented as text for now)
-        Label lockLabel = new Label(hasPassword ? "(Password needed)" : "", skin);
-        lockLabel.setColor(Color.YELLOW);
-        roomComponent.add(lockLabel).width(150f).padLeft(10f);
-
-        // Join button
-        TextButton joinButton = new TextButton("Join", skin);
-        joinButton.pad(5f, 15f, 5f, 15f);
-        roomComponent.add(joinButton).padLeft(10f).padRight(10f);
-
-        // Add click listener to join button
-        joinButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                System.out.println("Joining room: " + roomName +
-                    " (Players: " + currentPlayers + "/" + maxPlayers +
-                    ", Ping: " + ping + "ms, Password: " + hasPassword + ")");
-                // Here you would typically show a password dialog if hasPassword is true,
-                // then join the game
-            }
-        });
-
-        table.add(roomComponent).fillX().padBottom(20f).padLeft(10f).padRight(10f);
-        table.row();
-    }
 
     public StartScreen(final Main game) {
+        // ... (Font and Stage setup remains the same)
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Minecraft.ttf"));
         FreeTypeFontParameter parameter = new FreeTypeFontParameter();
         parameter.size = 72;
@@ -355,28 +282,30 @@ public class StartScreen implements Screen {
 
         stage = new Stage(new ScreenViewport());
 
-        try {
-            skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
-        } catch (Exception e) {
-            Gdx.app.error("StartScreen", "Could not load skin", e);
-            // Create a programmatic skin as a fallback
-            skin = new Skin();
+        // FIX: Use the skin loaded and managed by the Assets class
+        this.skin = game.assets.skin;
+
+        if (skin != null) {
+            skin.add("minecraft-font", font1, BitmapFont.class); // Add font to skin with a name
+        } else {
+            Gdx.app.error("StartScreen", "Skin is null, UI may not render correctly.");
         }
 
-        skin.add("minecraft-font", font1, BitmapFont.class); // Add font to skin with a name
 
         startTable = multiplayerScreenLayout(game);
         hostTable = hostGameLayout(game);
-        joinGameTable = joinGameLayout(game);
         localTable = localGameLayout(game);
+        joinTable = joinGameLayout(game); // NEW JOIN TABLE
+
         localTable.setVisible(false);
+        joinTable.setVisible(false); // Hide new table
+        hostTable.setVisible(false);
 
         stage.addActor(hostTable);
         stage.addActor(startTable);
         stage.addActor(localTable);
-        hostTable.setVisible(false);
-        stage.addActor(joinGameTable);
-        joinGameTable.setVisible(false);
+        stage.addActor(joinTable); // ADD NEW TABLE
+
 
         InputMultiplexer multiplexer = new InputMultiplexer();
         multiplexer.addProcessor(stage); // Keep UI input
@@ -385,8 +314,9 @@ public class StartScreen implements Screen {
             public boolean keyDown(int keycode) {
                 if (keycode == Input.Keys.ESCAPE) {
                     if (depth == 1) {
-                        joinGameTable.setVisible(false);
                         hostTable.setVisible(false);
+                        localTable.setVisible(false);
+                        joinTable.setVisible(false); // CHECK NEW TABLE
                         startTable.setVisible(true);
                         depth = 0;
                     } else {
@@ -428,8 +358,6 @@ public class StartScreen implements Screen {
     @Override
     public void dispose() {
         stage.dispose();
-        // Dispose the skin if we created it here
-        // If it's from Assets, do NOT dispose it.
-        skin.dispose();
+        // Skin is managed by Assets and should not be disposed here.
     }
 }

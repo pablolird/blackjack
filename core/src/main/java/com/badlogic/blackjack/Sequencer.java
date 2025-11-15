@@ -60,13 +60,24 @@ public class Sequencer {
 
         for (Card c : cards) {
             Entity newCardEntity = ecs.findCardEntity(c.m_id);
-            Action moveCard = moveCardAction(newCardEntity, deckPosition, deckRotation,duration);
-            sequenceAction.add(moveCard);
+            // Create entity if it doesn't exist (safety measure for synced cards)
+            if (newCardEntity == null) {
+                newCardEntity = ecs.createCardEntity(c);
+            }
+            // Only add action if entity exists (should always exist after creation attempt)
+            if (newCardEntity != null) {
+                Action moveCard = moveCardAction(newCardEntity, deckPosition, deckRotation, duration);
+                sequenceAction.add(moveCard);
+            }
         }
         return sequenceAction;
     }
 
     public Action moveCardAction(Entity cardEntity, Vector2 position, float rotation, float duration) {
+        if (cardEntity == null) {
+            // Return a no-op action if entity is null
+            return new DelayAction(0f);
+        }
         ParallelAction p = new ParallelAction();
         Action moveAction = new MoveToAction(cardEntity, position, rotation, duration);
         Action playCardSound = new PlaySFXAction(audioManager, SoundType.CARD_DEAL, 0.95f);
@@ -130,6 +141,10 @@ public class Sequencer {
     // MODIFICATIONS TO MAKE:
     //  - MAKE CARDS CENTERED WITH RESPECT TO PLAYER DECK POSITION
     public void createDealCardAction(Player p, int playerIndex) {
+        createDealCardAction(p, playerIndex, -1);
+    }
+
+    public void createDealCardAction(Player p, int playerIndex, int cardId) {
         float duration = 0.25f;
         List<Card> cards = p.m_currentCards;
         if (cards.isEmpty()) {
@@ -137,7 +152,18 @@ public class Sequencer {
         }
 
         // The newest card is the last one in the list.
-        Card newCardObject = cards.get(cards.size() - 1);
+        Card newCardObject = null;
+        if (cardId >= 0) {
+            for (Card c : cards) {
+                if (c.m_id == cardId) {
+                    newCardObject = c;
+                    break;
+                }
+            }
+        }
+        if (newCardObject == null) {
+            newCardObject = cards.get(cards.size() - 1);
+        }
         Entity newCardEntity = ecs.findCardEntity(newCardObject.m_id);
 
         // If the entity for the new card doesn't exist yet, create it.
@@ -152,8 +178,10 @@ public class Sequencer {
         Vector2 shiftAmount = g.shift.get("PLAYER" + (playerIndex + 1));
 
         // 1. Create ShiftToAction for all existing cards (from index 0 to n-2).
-        for (int i = 0; i < cards.size() - 1; i++) {
-            Card existingCard = cards.get(i);
+        for (Card existingCard : cards) {
+            if (existingCard == newCardObject) {
+                continue;
+            }
             Entity existingEntity = ecs.findCardEntity(existingCard.m_id);
 
             if (existingEntity != null) {

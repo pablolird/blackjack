@@ -21,10 +21,11 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.badlogic.blackjack.network.GameClient;
+import com.badlogic.blackjack.network.NetworkPacket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 public class UI {
@@ -33,11 +34,14 @@ public class UI {
     private Table actionTable;
     private Window pauseMenu;
     private Window gameOverMenu;
+    private Window gameOverWaitingMenu;
+    private Window gameOverLocalMenu;
     private BlackjackLogic blackjackLogic;
     private boolean paused;
     private AudioManager audioManager;
     private Get g;
     private Main game;
+    private GameClient gameClient;
     Player currentPlayer;
 
     private ArrayList<TextButton> bettingButtons;
@@ -48,7 +52,6 @@ public class UI {
 
     private Drawable coinDrawable;
     private Drawable clubDrawable;
-    private SpriteBatch spriteBatch;
 
     Color HEX(String value) {
         // Remove '#' if present
@@ -151,6 +154,7 @@ public class UI {
         this.paused = false;
         this.audioManager = audioManager;
         this.stage = new Stage(vp, sb);
+        this.gameClient = game.gameClient;
 
         this.bettingButtons = new ArrayList<>();
         this.mainButtons = new ArrayList<>();
@@ -185,22 +189,37 @@ public class UI {
         hitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                blackjackLogic.hit();
+                if (gameClient != null) {
+                    gameClient.sendAction(NetworkPacket.PlayerActionType.HIT);
+                } else {
+                    // Local game - call logic directly
+                    blackjackLogic.hit();
+                }
             }
         });
 
         standButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                if (gameClient != null) {
+                    gameClient.sendAction(NetworkPacket.PlayerActionType.STAND);
+                } else {
+                    // Local game - call logic directly
+                    blackjackLogic.stand();
+                }
                 audioManager.playSound(SoundType.STAND, 1.0f);
-                blackjackLogic.stand();
             }
         });
 
         confirmBetButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                blackjackLogic.playerLockInBet();
+                if (gameClient != null) {
+                    gameClient.sendAction(NetworkPacket.PlayerActionType.LOCK_IN_BET);
+                } else {
+                    // Local game - call logic directly
+                    blackjackLogic.playerLockInBet();
+                }
                 audioManager.playSound(SoundType.LOCKBET, 0.65f);
             }
         });
@@ -226,57 +245,123 @@ public class UI {
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                blackjackLogic.playerAddToBet(amount);
+                if (gameClient != null) {
+                    gameClient.sendAction(NetworkPacket.PlayerActionType.ADD_TO_BET, amount);
+                } else {
+                    blackjackLogic.playerAddToBet(amount);
+                }
                 audioManager.playSound(SoundType.BET, 1.0f);
             }
         });
     }
 
     private void buildPauseMenu() {
-        // Pause menu allegedly
-        pauseMenu = new Window(" Pause ", skin);
-        // This should have a conditional rendering and logic depending on whether user is host or client
-        // Also for host or client
-        TextButton quitButton = createButton(" Quit Room ", HEX("#383645"));
-        pauseMenu.add(quitButton);
+        pauseMenu = new Window("Pause", skin);
+        pauseMenu.pad(20);
+        
+        TextButton exitMatchButton = new TextButton("Exit Match", skin);
+        pauseMenu.add(exitMatchButton);
         pauseMenu.pack(); // Size the window to its contents
         pauseMenu.setPosition(stage.getWidth() / 2 - pauseMenu.getWidth() / 2, stage.getHeight() / 2 - pauseMenu.getHeight() / 2);
         pauseMenu.getTitleLabel().setFontScale(0.5f);
         stage.addActor(pauseMenu);
         pauseMenu.setVisible(false); // Hide it by default
+        
+        // Exit Match button listener - will be set by GameScreen
+        exitMatchButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                if (gameClient != null && game.exitMatchCallback != null) {
+                    game.exitMatchCallback.onExitMatch();
+                } else {
+                    // Local game, just return to start screen
+                    game.setScreen(new StartScreen(game));
+                    dispose();
+                }
+            }
+        });
 
     }
 
-    private void buildGameOverMenu(BlackjackLogic bl) {
-        TextButton quitButton = createButton(" Quit Room ", HEX("#383645"));
-        // 4. Build the Game over Menu (initially hidden too)
-        gameOverMenu = new Window(" Game Over ", skin);
+    private void buildGameOverMenu() {
+        // 4. Build the Game Over Menu for Host (with restart and exit options)
+        gameOverMenu = new Window("Game Over", skin);
         gameOverMenu.pad(20);
         gameOverMenu.padTop(50);
-        gameOverMenu.add(quitButton);
-
+        
+        TextButton restartMatchButton = new TextButton("Restart Match", skin);
+        gameOverMenu.add(restartMatchButton).expand().pad(10);
+        
         gameOverMenu.row();
-        TextButton restartButton = createButton(" Restart Game ", HEX("#383645"));
-        gameOverMenu.add(restartButton).expand();
+        TextButton exitButton = new TextButton("Exit", skin);
+        gameOverMenu.add(exitButton).expand().pad(10);
+        
         gameOverMenu.pack(); // Size the window to its contents
-        gameOverMenu.setPosition(stage.getWidth() / 2 - pauseMenu.getWidth() / 2, stage.getHeight() / 2 - pauseMenu.getHeight() / 2);
-        gameOverMenu.getTitleLabel().setFontScale(0.5f);
+        gameOverMenu.setPosition(stage.getWidth() / 2 - gameOverMenu.getWidth() / 2, stage.getHeight() / 2 - gameOverMenu.getHeight() / 2);
         stage.addActor(gameOverMenu);
         gameOverMenu.setVisible(false); // Hide it by default
 
-        quitButton.addListener(new ChangeListener() {
+        // 5. Build the Game Over Waiting Menu for Non-Host players
+        gameOverWaitingMenu = new Window("Game Over", skin);
+        gameOverWaitingMenu.pad(20);
+        gameOverWaitingMenu.padTop(50);
+        Label waitingLabel = new Label("Waiting for host...", skin);
+        waitingLabel.setAlignment(Align.center);
+        gameOverWaitingMenu.add(waitingLabel).expand().pad(20);
+        gameOverWaitingMenu.pack();
+        gameOverWaitingMenu.setPosition(stage.getWidth() / 2 - gameOverWaitingMenu.getWidth() / 2, stage.getHeight() / 2 - gameOverWaitingMenu.getHeight() / 2);
+        stage.addActor(gameOverWaitingMenu);
+        gameOverWaitingMenu.setVisible(false); // Hide it by default
+
+        // 6. Build the Game Over Menu for Local Games (exit only, no restart)
+        gameOverLocalMenu = new Window("Game Over", skin);
+        gameOverLocalMenu.pad(20);
+        gameOverLocalMenu.padTop(50);
+        TextButton exitLocalButton = new TextButton("Exit", skin);
+        gameOverLocalMenu.add(exitLocalButton).expand().pad(10);
+        gameOverLocalMenu.pack();
+        gameOverLocalMenu.setPosition(stage.getWidth() / 2 - gameOverLocalMenu.getWidth() / 2, stage.getHeight() / 2 - gameOverLocalMenu.getHeight() / 2);
+        stage.addActor(gameOverLocalMenu);
+        gameOverLocalMenu.setVisible(false); // Hide it by default
+
+        exitLocalButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                // Local game - just return to start screen
                 game.setScreen(new StartScreen(game));
                 dispose(); // Dispose this screen
             }
         });
 
-        restartButton.addListener(new ChangeListener() {
+        exitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.setScreen(new GameScreen(game, bl.numPlayers));
-                dispose(); // Dispose this screen
+                if (gameClient != null && game.exitMatchCallback != null) {
+                    game.exitMatchCallback.onExitMatch();
+                } else {
+                    game.setScreen(new StartScreen(game));
+                    dispose(); // Dispose this screen
+                }
+            }
+        });
+
+        restartMatchButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                // For local games, handle restart directly without callbacks
+                if (gameClient == null) {
+                    // Local game - restart directly
+                    Gdx.app.log("UI", "Restarting local game");
+                    int numPlayers = blackjackLogic.getPlayersList().size();
+                    game.setScreen(new GameScreen(game, numPlayers));
+                    dispose(); // Dispose this screen
+                } else if (game.restartMatchCallback != null) {
+                    // Multiplayer - use callback
+                    Gdx.app.log("UI", "Restart match button clicked - using callback");
+                    game.restartMatchCallback.onRestartMatch();
+                } else {
+                    Gdx.app.log("UI", "No callback available for restart");
+                }
             }
         });
     }
@@ -287,7 +372,7 @@ public class UI {
         buildActionTable();
         // This should have a conditional rendering and logic depending on whether user is host or client
         buildPauseMenu();
-        buildGameOverMenu(bl);
+        buildGameOverMenu();
 
         // Check later where to put this
 
@@ -453,7 +538,29 @@ public class UI {
         pauseMenu.setVisible(paused);
     }
 
-    public void showGameOverMenu() {
-        gameOverMenu.setVisible(true);
+    public void showGameOverMenu(boolean isHost) {
+        // Check if this is a local game
+        boolean isLocalGame = (gameClient == null);
+        
+        if (isLocalGame) {
+            // Local game - show menu with exit only
+            gameOverLocalMenu.setVisible(true);
+            gameOverMenu.setVisible(false);
+            gameOverWaitingMenu.setVisible(false);
+        } else if (isHost) {
+            // Multiplayer host - show menu with restart and exit
+            gameOverMenu.setVisible(true);
+            gameOverLocalMenu.setVisible(false);
+            gameOverWaitingMenu.setVisible(false);
+        } else {
+            // Multiplayer non-host - show waiting menu
+            gameOverMenu.setVisible(false);
+            gameOverLocalMenu.setVisible(false);
+            gameOverWaitingMenu.setVisible(true);
+        }
+    }
+    
+    public boolean isGameOverMenuVisible() {
+        return gameOverMenu.isVisible() || gameOverWaitingMenu.isVisible() || gameOverLocalMenu.isVisible();
     }
 }
