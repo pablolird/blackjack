@@ -30,9 +30,9 @@ public class Get {
         scoreShift.put("DEALER",  new Vector2(0, 104));
         scoreShift.put("PLAYER1", new Vector2(-30, 104));
         scoreShift.put("PLAYER2", new Vector2(-160, -20));
-        scoreShift.put("PLAYER3", new Vector2(-50, -90));
+        scoreShift.put("PLAYER3", new Vector2(-70, -90));
         scoreShift.put("PLAYER4", new Vector2(0, -90));
-        scoreShift.put("PLAYER5", new Vector2(50, -90));
+        scoreShift.put("PLAYER5", new Vector2(70, -90));
         scoreShift.put("PLAYER6", new Vector2(160, -20));
         scoreShift.put("PLAYER7", new Vector2(30, 104));
 

@@ -3,6 +3,7 @@ import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -10,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TiledDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -20,7 +22,10 @@ import com.badlogic.blackjack.lobby.ClientLobbyScreen;
 public class StartScreen implements Screen {
     private Stage stage;
     private Skin skin; // Assumes you have a skin in assets
-    private Texture background;
+    private TiledDrawable startBackground;
+    private TiledDrawable hostBackground;
+    private TiledDrawable joinBackground;
+    private TiledDrawable localBackground;
     private Table hostTable;
     private Table startTable;
     private Table localTable;
@@ -41,7 +46,7 @@ public class StartScreen implements Screen {
     Table localGameLayout(Main game) {
         Table table = new Table();
         table.setFillParent(true);
-
+        table.setBackground(localBackground);
         table.row().padBottom(10f);
         Label maxPlayersLabel = new Label("Max number of players: ", skin);
         maxPlayersLabel.setWidth(100);
@@ -90,6 +95,7 @@ public class StartScreen implements Screen {
     Table joinGameLayout(Main game) {
         Table joinTable = new Table();
         joinTable.setFillParent(true);
+        joinTable.setBackground(joinBackground);
 
         // --- NEW ROW FOR PLAYER NAME ---
         joinTable.row().padBottom(10f);
@@ -143,6 +149,7 @@ public class StartScreen implements Screen {
 
     Table multiplayerScreenLayout(Main game) {
         Table startTable = new Table();
+        startTable.setBackground(startBackground);
         startTable.setFillParent(true);
 
         Table titleTable = new Table();
@@ -215,6 +222,7 @@ public class StartScreen implements Screen {
         Table hostTable = new Table();
         // hostTable.setDebug(true);
         hostTable.setFillParent(true);
+        hostTable.setBackground(hostBackground);
 
         // Host properties capture
         TextField roomNameField = new TextField("My Blackjack Room",skin);
@@ -284,10 +292,20 @@ public class StartScreen implements Screen {
 
 
     public StartScreen(final Main game) {
-        // ... (Font and Stage setup remains the same)
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Minecraft.ttf"));
+        // Tiles declaration
+        Texture startTex = new Texture(Gdx.files.internal("pixel/Picture/color_background_91.png"));
+        Texture hostTex = new Texture(Gdx.files.internal("pixel/Picture/color_background_6.png"));
+        Texture joinTex = new Texture(Gdx.files.internal("pixel/Picture/color_background_4.png"));
+        Texture localTex = new Texture(Gdx.files.internal("pixel/Picture/color_background_8.png"));
+
+        startBackground = new TiledDrawable(new TextureRegion(startTex));
+        hostBackground = new TiledDrawable(new TextureRegion(hostTex));
+        joinBackground = new TiledDrawable(new TextureRegion(joinTex));
+        localBackground = new TiledDrawable(new TextureRegion(localTex));        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Minecraft.ttf"));
         FreeTypeFontParameter parameter = new FreeTypeFontParameter();
         parameter.size = 72;
+        parameter.borderColor = Color.DARK_GRAY;
+        parameter.borderWidth = 3f;
         BitmapFont font1 = generator.generateFont(parameter); // font size 12 pixels
         generator.dispose(); // don't forget to dispose to avoid memory leaks!
 
