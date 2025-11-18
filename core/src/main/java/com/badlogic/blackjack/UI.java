@@ -31,6 +31,7 @@ import java.util.List;
 public class UI {
     private Stage stage;
     private Skin skin;
+    private Timer timer;
     private Table actionTable;
     private Window pauseMenu;
     private Window gameOverMenu;
@@ -97,6 +98,22 @@ public class UI {
         return b;
     }
 
+    public void hideTimer() {
+        this.timer.hide();
+    }
+
+    public void showTimer() {
+        this.timer.show();
+    }
+
+    public void resetTimer() {
+        this.timer.reset();
+    }
+
+    public void updateTimer(float delta) {
+        this.timer.update(delta);
+    }
+
     public void initSkin(String path) {
         // Needed to add a freetype font included in a json skin for some reason
         this.skin = new Skin(Gdx.files.internal(path)) {
@@ -161,6 +178,7 @@ public class UI {
 
         Gdx.input.setInputProcessor(stage);
         initSkin(skin_path);
+        this.timer = new Timer(stage, skin, BlackjackLogic.PLAYER_ACTION_TIMEOUT, bl.isLocal());
     }
 
     public void buildActionTable() {
@@ -258,7 +276,7 @@ public class UI {
     private void buildPauseMenu() {
         pauseMenu = new Window("Pause", skin);
         pauseMenu.pad(20);
-        
+
         TextButton exitMatchButton = new TextButton("Exit Match", skin);
         pauseMenu.add(exitMatchButton);
         pauseMenu.pack(); // Size the window to its contents
@@ -266,7 +284,7 @@ public class UI {
         pauseMenu.getTitleLabel().setFontScale(0.5f);
         stage.addActor(pauseMenu);
         pauseMenu.setVisible(false); // Hide it by default
-        
+
         // Exit Match button listener - will be set by GameScreen
         exitMatchButton.addListener(new ChangeListener() {
             @Override
@@ -288,14 +306,14 @@ public class UI {
         gameOverMenu = new Window("Game Over", skin);
         gameOverMenu.pad(20);
         gameOverMenu.padTop(50);
-        
+
         TextButton restartMatchButton = new TextButton("Restart Match", skin);
         gameOverMenu.add(restartMatchButton).expand().pad(10);
-        
+
         gameOverMenu.row();
         TextButton exitButton = new TextButton("Exit", skin);
         gameOverMenu.add(exitButton).expand().pad(10);
-        
+
         gameOverMenu.pack(); // Size the window to its contents
         gameOverMenu.setPosition(stage.getWidth() / 2 - gameOverMenu.getWidth() / 2, stage.getHeight() / 2 - gameOverMenu.getHeight() / 2);
         stage.addActor(gameOverMenu);
@@ -413,7 +431,7 @@ public class UI {
         // PLAYERS
         for (int i = 0; i < players.size(); i++) {
             Player p = players.get(i);
-            PlayerUI pUI = new PlayerUI(p.getName()+i, p.getBalance(), p.totalValue(), skin);
+            PlayerUI pUI = new PlayerUI(p.getName()+i, p.totalValue(), p.getBalance(), skin);
 
             Window w2 = new Window("", skin);
             w2.setSize(140,90);
@@ -541,7 +559,7 @@ public class UI {
     public void showGameOverMenu(boolean isHost) {
         // Check if this is a local game
         boolean isLocalGame = (gameClient == null);
-        
+
         if (isLocalGame) {
             // Local game - show menu with exit only
             gameOverLocalMenu.setVisible(true);
@@ -559,7 +577,7 @@ public class UI {
             gameOverWaitingMenu.setVisible(true);
         }
     }
-    
+
     public boolean isGameOverMenuVisible() {
         return gameOverMenu.isVisible() || gameOverWaitingMenu.isVisible() || gameOverLocalMenu.isVisible();
     }

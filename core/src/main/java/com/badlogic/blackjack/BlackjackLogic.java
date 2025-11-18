@@ -24,10 +24,14 @@ public class BlackjackLogic {
     private float dealerTurnDelay = 0f;
     private static final float DEALER_TURN_DELAY_TIME = 1.0f; // 1 second delay before dealer turn starts
     private float playerActionTimer = 0f;
-    private static final float PLAYER_ACTION_TIMEOUT = 15.0f; // 15 second timeout for player actions
+    public static final float PLAYER_ACTION_TIMEOUT = 15.0f; // 15 second timeout for player actions
     private int lastPlayerIndex = -1; // Track when player changes to reset timer
 
     private GameStateListener stateListener;
+
+    public boolean isLocal() {
+        return isLocalGame;
+    }
 
     public BlackjackLogic(Sequencer sequencer, List<String> playerNames) {
         this(sequencer, playerNames, false);
@@ -102,10 +106,11 @@ public class BlackjackLogic {
     }
 
     public void nextPlayer() {
+        // Used after HIT/STAND
         if (current_playerIndex==playersList.size()-1) {
             // Last player finished, transition to dealer turn with delay
             gameState = GameState.DEALER_TURN;
-            dealerTurnDelay = DEALER_TURN_DELAY_TIME; // Start 1 second delay
+            dealerTurnDelay = DEALER_TURN_DELAY_TIME; // Start 1-second delay
             if(gameUI != null) gameUI.showPlayerActionPanel(false); // Check for null
             notifyStateChanged(); // NOTIFY
         } else {
@@ -113,6 +118,7 @@ public class BlackjackLogic {
             current_playerIndex=(current_playerIndex+1)%playersList.size();
             // Reset timer for new player's turn
             playerActionTimer = 0f;
+            if(gameUI != null) gameUI.resetTimer();
             lastPlayerIndex = current_playerIndex;
             if(gameUI != null) gameUI.updateCurrentPlayerColor(playersList.get(current_playerIndex)); // Check for null
             notifyStateChanged(); // NOTIFY - important for multiplayer to sync player change
@@ -139,15 +145,19 @@ public class BlackjackLogic {
         }
         // Reset timer when player takes action
         playerActionTimer = 0f;
+        if (gameUI != null) gameUI.resetTimer();
     }
 
     public void playerLockInBet() {
         Player currentPlayer = playersList.get(current_playerIndex);
         if (currentPlayer.getCurrentBet() > 0) {
             currentPlayer.lockInBet();
-            if(gameUI != null) gameUI.updatePlayerBalance(currentPlayer); // Check for null
             // Reset timer when player takes action
             playerActionTimer = 0f;
+            if(gameUI != null){
+                gameUI.updatePlayerBalance(currentPlayer); // Check for null
+                gameUI.resetTimer();
+            }
 
             if (current_playerIndex < playersList.size() - 1)
             {
@@ -273,8 +283,7 @@ public class BlackjackLogic {
         p.addCard(dealtCard);
         if(sequencer != null) sequencer.createDealCardAction(p,current_playerIndex, dealtCard.m_id); // Check for null
         if(gameUI != null) gameUI.updatePlayerScore(p); // Check for null
-        // Reset timer when player takes action
-        playerActionTimer = 0f;
+        // Don't reset timer on hit - timer should continue for the full 15 seconds of the turn
 
         if (p.totalValue()>21) {
             nextPlayer();
@@ -301,6 +310,7 @@ public class BlackjackLogic {
                 cardReturnAnimationDelay = 0f; // Reset animation delay
                 dealerTurnDelay = 0f; // Reset dealer turn delay
                 playerActionTimer = 0f; // Reset player action timer
+                if (gameUI != null) gameUI.resetTimer();
                 lastPlayerIndex = -1; // Reset last player index tracker
                 gameState = GameState.BETTING;
                 if(gameUI != null) {
@@ -310,17 +320,30 @@ public class BlackjackLogic {
                 notifyStateChanged(); // NOTIFY (Initial BETTING state)
                 break;
             case BETTING:
+                // In local games, hide timer during betting (no time limit)
+                if (isLocalGame && gameUI != null) {
+                    gameUI.hideTimer();
+                }
+
                 // Reset timer when a new player's turn starts
                 if (lastPlayerIndex != current_playerIndex) {
                     playerActionTimer = 0f;
+                    // Only reset/show timer in multiplayer (server) - local games don't show timer during betting
+                    if (gameUI != null && !isLocalGame) {
+                        gameUI.resetTimer();
+                    }
                     lastPlayerIndex = current_playerIndex;
                 }
 
-                // Update timer (only on server in multiplayer, or always in local games)
-                playerActionTimer += delta;
+                // Update timer (only on server in multiplayer, not in local games)
+                if (!isLocalGame) {
+                    playerActionTimer += delta;
+                    if (gameUI != null) gameUI.updateTimer(delta);
+                }
 
                 // Auto-action after 15 seconds (only on server where sequencer is null)
                 if (playerActionTimer >= PLAYER_ACTION_TIMEOUT && sequencer == null) {
+                    if (gameUI != null) gameUI.hideTimer();
                     Player currentPlayer = playersList.get(current_playerIndex);
                     int balance = currentPlayer.getBalance();
 
@@ -346,6 +369,7 @@ public class BlackjackLogic {
                     }
                     // Reset timer
                     playerActionTimer = 0f;
+                    if (gameUI != null) gameUI.resetTimer();
                 }
                 break;
             case DEALING_DEALER:
@@ -467,15 +491,22 @@ public class BlackjackLogic {
                 // Reset timer when a new player's turn starts
                 if (lastPlayerIndex != current_playerIndex) {
                     playerActionTimer = 0f;
+                    if (gameUI != null) {
+                        gameUI.resetTimer();
+                        gameUI.showTimer(); // Show timer when entering player turn
+                    }
                     lastPlayerIndex = current_playerIndex;
                     Gdx.app.log("BlackjackLogic", "Player turn started: " + playersList.get(current_playerIndex).getName() + " (index: " + current_playerIndex + ")");
                 }
 
                 // Update timer (only on server in multiplayer, or always in local games)
                 playerActionTimer += delta;
+                if (gameUI != null) gameUI.updateTimer(delta);
+
 
                 // Auto-stand after 15 seconds (only on server where sequencer is null, or if sequencer is not busy)
                 if (playerActionTimer >= PLAYER_ACTION_TIMEOUT && (sequencer == null || !sequencer.isBusy())) {
+                    if (gameUI != null) gameUI.hideTimer();
                     String playerName = playersList.get(current_playerIndex).getName();
                     Gdx.app.log("BlackjackLogic", "Auto-stand: Player " + playerName + " stood after timeout (timer was: " + playerActionTimer + ")");
                     stand();

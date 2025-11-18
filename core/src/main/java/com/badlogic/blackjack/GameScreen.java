@@ -55,6 +55,13 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     private float resolvingBetsDelay = 0f;
     private static final float RESOLVING_BETS_DELAY_TIME = 2.0f; // 2 second delay to view results
     private boolean isRestarting = false; // Flag to prevent multiple restarts
+    
+    // Timer tracking for multiplayer clients
+    private float clientTimer = 0f;
+    private int lastClientPlayerIndex = -1;
+    private GameState lastClientGameState = null;
+    private GameState currentNetworkState = null; // Track state from network updates
+    private int currentNetworkPlayerIndex = -1; // Track player index from network updates
 
     public GameScreen(Main game, boolean isHost, List<String> playerNames) {
         this.game = game;
@@ -177,6 +184,37 @@ public class GameScreen implements Screen, LobbyUpdateListener {
                 sequencer.moveCardsToDeck(logic.getPlayersList(), logic.getDealer());
                 cardReturnAnimationStarted = true;
                 Gdx.app.log("GameScreen", "Started card return animation");
+            }
+        }
+
+        // Update timer for multiplayer clients (server handles its own timer in BlackjackLogic)
+        if (game.gameClient != null && currentNetworkState != null) {
+            // Use network state instead of logic state for multiplayer clients
+            GameState currentState = currentNetworkState;
+            int currentPlayerIndex = currentNetworkPlayerIndex;
+            
+            // Reset timer when player changes or state changes
+            if (lastClientPlayerIndex != currentPlayerIndex || lastClientGameState != currentState) {
+                clientTimer = 0f;
+                lastClientPlayerIndex = currentPlayerIndex;
+                lastClientGameState = currentState;
+                
+                // Show/hide timer based on state
+                if (currentState == GameState.PLAYER_TURN) {
+                    ui.resetTimer();
+                    ui.showTimer();
+                } else if (currentState == GameState.BETTING) {
+                    ui.resetTimer();
+                    ui.showTimer();
+                } else {
+                    ui.hideTimer();
+                }
+            }
+            
+            // Update timer in PLAYER_TURN and BETTING states
+            if (currentState == GameState.PLAYER_TURN || currentState == GameState.BETTING) {
+                clientTimer += delta;
+                ui.updateTimer(delta);
             }
         }
 
@@ -311,6 +349,31 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         }
 
         Gdx.app.log("GameScreen", "Received state update: " + update.currentGameState + " | Current Player: " + update.currentPlayerName);
+
+        // Update network state tracking for timer
+        GameState newState = GameState.valueOf(update.currentGameState);
+        int newPlayerIndex = update.currentPlayerIndex;
+        
+        // Reset timer if state or player changed
+        if (currentNetworkState != newState || currentNetworkPlayerIndex != newPlayerIndex) {
+            clientTimer = 0f;
+            lastClientPlayerIndex = newPlayerIndex;
+            lastClientGameState = newState;
+            
+            // Show/hide timer based on new state
+            if (newState == GameState.PLAYER_TURN) {
+                ui.resetTimer();
+                ui.showTimer();
+            } else if (newState == GameState.BETTING) {
+                ui.resetTimer();
+                ui.showTimer();
+            } else {
+                ui.hideTimer();
+            }
+        }
+        
+        currentNetworkState = newState;
+        currentNetworkPlayerIndex = newPlayerIndex;
 
         // --- THIS IS THE ENTIRE CLIENT-SIDE IMPLEMENTATION ---
 
@@ -509,7 +572,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
                     Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
                     localDealer.addCard(newCard);
                     pendingAnimations.add(new PendingAnimation(PendingAnimation.Type.DEALER, serverCardInfo, -1, null));
-                    ui.updateDealerScore(localDealer);
+                    // Don't update score here - wait for animation to start in processPendingAnimations()
                     break; // Only one new card per update
                 }
             }
@@ -532,7 +595,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
                             Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
                             localPlayer.addCard(newCard);
                             pendingAnimations.add(new PendingAnimation(PendingAnimation.Type.PLAYER, serverCardInfo, playerIndex, serverPlayer.name));
-                            ui.updatePlayerScore(localPlayer);
+                            // Don't update score here - wait for animation to start in processPendingAnimations()
                         }
                     }
                 }
