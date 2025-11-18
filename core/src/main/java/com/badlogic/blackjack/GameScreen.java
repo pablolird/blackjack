@@ -1,5 +1,6 @@
 package com.badlogic.blackjack;
 
+import com.badlogic.blackjack.network.GameClient;
 import com.badlogic.blackjack.network.GameServer;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -55,6 +56,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     private float resolvingBetsDelay = 0f;
     private static final float RESOLVING_BETS_DELAY_TIME = 2.0f; // 2 second delay to view results
     private boolean isRestarting = false; // Flag to prevent multiple restarts
+    private boolean exitMatchInitiated = false;
     
     // Timer tracking for multiplayer clients
     private float clientTimer = 0f;
@@ -75,6 +77,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         // All clients (host and non-host) need to be listeners for state updates
         if (game.gameClient != null) {
             game.gameClient.addLobbyUpdateListener(this);
+            game.gameClient.setSessionMode(GameClient.SessionMode.MATCH);
         }
 
         // Use the constants from Main
@@ -125,6 +128,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
             // Send exit match request to server
             // The server will send a response and close the connection
             // We'll handle cleanup in onExitMatch() when we receive the response
+            exitMatchInitiated = true;
             game.gameClient.sendExitMatchRequest();
         } else {
             // Local game, just return to start screen
@@ -253,6 +257,10 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
         // Remove listener to prevent duplicate handling of network events
         if (game.gameClient != null) {
+            if (!isRestarting && game.gameClient.getSessionMode() == GameClient.SessionMode.MATCH && !exitMatchInitiated) {
+                exitMatchInitiated = true;
+                game.gameClient.sendExitMatchRequest();
+            }
             game.gameClient.removeLobbyUpdateListener(this);
         }
 
@@ -313,6 +321,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     @Override
     public void onExitMatch(NetworkPacket.ExitMatchResponse response) {
         Gdx.app.log("GameScreen", "Received exit match response: hostExited=" + response.hostExited + ", player=" + response.exitedPlayerName);
+        exitMatchInitiated = true;
 
         // Disconnect client if still connected
         if (game.gameClient != null) {

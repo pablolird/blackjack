@@ -92,6 +92,7 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
 
             // 2. Start the Client (Host is also a client)
             client = new GameClient(hostPlayerName);
+            client.setSessionMode(GameClient.SessionMode.LOBBY);
             client.addLobbyUpdateListener(this);
             // Host connects to their own local server
             client.connect("127.0.0.1");
@@ -136,7 +137,7 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         // The server will process it and send ExitLobbyResponse
         // We'll handle cleanup in onExitLobby() when we receive the response
         if (client != null) {
-            client.sendExitLobbyRequest(hostPlayerName);
+            client.sendExitLobbyRequest();
         }
         // Don't dispose here - wait for server response to avoid race condition
     }

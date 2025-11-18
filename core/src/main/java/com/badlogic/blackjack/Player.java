@@ -6,6 +6,7 @@ public class Player extends Dealer {
     private int m_balance;
     private int m_currentBet;
     private boolean m_active = true;
+    private boolean fiveCardCharlieAchieved = false;
 
     public Player(String name, int id, int balance) {
         this.m_id = id;
@@ -45,6 +46,14 @@ public class Player extends Dealer {
         this.m_balance += amount;
     }
 
+    public boolean hasFiveCardCharlie() {
+        return fiveCardCharlieAchieved;
+    }
+
+    public void setFiveCardCharlie(boolean achieved) {
+        this.fiveCardCharlieAchieved = achieved;
+    }
+
     public void setBalance(int newBalance) {
         this.m_balance = newBalance;
     }
@@ -66,6 +75,7 @@ public class Player extends Dealer {
         this.m_currentCards.clear();
         this.m_currentBet = 0;
         this.m_active = true;
+        this.fiveCardCharlieAchieved = false;
     }
 
     public int getID() {

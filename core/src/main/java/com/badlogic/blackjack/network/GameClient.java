@@ -17,10 +17,18 @@ import static com.badlogic.blackjack.Main.TCP_PORT;
 import static com.badlogic.blackjack.Main.UDP_PORT;
 
 public class GameClient {
+    public enum SessionMode {
+        NONE,
+        LOBBY,
+        MATCH
+    }
+
     private final Client client;
     private final Array<LobbyUpdateListener> listeners = new Array<>();
     private final String playerName;
     private Future<?> connectionFuture;
+    private SessionMode sessionMode = SessionMode.NONE;
+    private boolean exitRequested = false;
 
     public interface LobbyUpdateListener {
         void onLobbyUpdate(NetworkPacket.LobbyUpdate update);
@@ -154,6 +162,10 @@ public class GameClient {
     // --- END NEW ---
     
     public void sendExitMatchRequest() {
+        exitRequested = true;
+        if (!client.isConnected()) {
+            return;
+        }
         NetworkPacket.ExitMatchRequest request = new NetworkPacket.ExitMatchRequest();
         request.playerName = this.playerName;
         client.sendTCP(request);
@@ -167,10 +179,18 @@ public class GameClient {
     }
     
     public void sendExitLobbyRequest(String playerName) {
+        exitRequested = true;
+        if (!client.isConnected()) {
+            return;
+        }
         NetworkPacket.ExitLobbyRequest request = new NetworkPacket.ExitLobbyRequest();
         request.playerName = playerName;
         client.sendTCP(request);
         Gdx.app.log("GameClient", "Sent exit lobby request");
+    }
+
+    public void sendExitLobbyRequest() {
+        sendExitLobbyRequest(this.playerName);
     }
 
     /**
@@ -200,11 +220,32 @@ public class GameClient {
     }
 
     public void dispose() {
+        if (client.isConnected() && !exitRequested) {
+            if (sessionMode == SessionMode.MATCH) {
+                sendExitMatchRequest();
+            } else if (sessionMode == SessionMode.LOBBY) {
+                sendExitLobbyRequest();
+            }
+        }
+
         if (connectionFuture != null && !connectionFuture.isDone()) {
             connectionFuture.cancel(true);
         }
         client.close();
         client.stop();
         Gdx.app.log("GameClient", "Client stopped.");
+        sessionMode = SessionMode.NONE;
+    }
+
+    public void setSessionMode(SessionMode sessionMode) {
+        this.sessionMode = sessionMode;
+    }
+
+    public SessionMode getSessionMode() {
+        return sessionMode;
+    }
+
+    public boolean isConnected() {
+        return client.isConnected();
     }
 }

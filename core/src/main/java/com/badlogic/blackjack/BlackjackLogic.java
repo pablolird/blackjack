@@ -201,6 +201,11 @@ public class BlackjackLogic {
                     // Player blackjack
                     multiplier = 2.5;
                 }
+                else if (p.hasFiveCardCharlie())
+                {
+                    // Five-card charlie auto win (standard payout)
+                    multiplier = 2.0;
+                }
                 else if (busted)
                 {
                     // Dealer busted
@@ -285,9 +290,22 @@ public class BlackjackLogic {
         if(gameUI != null) gameUI.updatePlayerScore(p); // Check for null
         // Don't reset timer on hit - timer should continue for the full 15 seconds of the turn
 
-        if (p.totalValue()>21) {
+        if (checkForFiveCardCharlie(p)) {
+            Gdx.app.log("BlackjackLogic", "Auto-standing " + p.getName() + " due to 5-card charlie");
             nextPlayer();
-            // We notify inside nextPlayer()
+            return;
+        }
+
+        int total = p.totalValue();
+        if (total > 21) {
+            nextPlayer();
+            return;
+        }
+
+        if (total == 21) {
+            Gdx.app.log("BlackjackLogic", "Auto-standing " + p.getName() + " at 21");
+            nextPlayer();
+            return;
         }
     }
 
@@ -482,6 +500,10 @@ public class BlackjackLogic {
                 break;
             }
             case PLAYER_TURN:
+                if (autoAdvanceIfCurrentPlayerResolved()) {
+                    break;
+                }
+
                 if (gameUI != null && !gameUI.ActionPanelIsVisible()) // Check for null
                 {
                     gameUI.showPlayerActionPanel(true);
@@ -693,5 +715,31 @@ public class BlackjackLogic {
 
     private Player createPlayer(String name) {
         return new Player(name, nextPlayerId++, 100);
+    }
+
+    private boolean checkForFiveCardCharlie(Player player) {
+        if (player.hasFiveCardCharlie()) {
+            return true;
+        }
+
+        if (player.m_currentCards.size() >= 5 && player.totalValue() < 21) {
+            player.setFiveCardCharlie(true);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean autoAdvanceIfCurrentPlayerResolved() {
+        if (playersList.isEmpty() || current_playerIndex >= playersList.size()) {
+            return false;
+        }
+
+        Player currentPlayer = playersList.get(current_playerIndex);
+        if (checkForFiveCardCharlie(currentPlayer) || currentPlayer.totalValue() == 21) {
+            Gdx.app.log("BlackjackLogic", "Skipping turn for " + currentPlayer.getName() + " (auto-resolved)");
+            nextPlayer();
+            return true;
+        }
+        return false;
     }
 }

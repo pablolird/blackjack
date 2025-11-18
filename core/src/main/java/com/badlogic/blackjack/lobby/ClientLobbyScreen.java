@@ -72,6 +72,7 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
 
         // --- Networking Setup ---
         client = new GameClient(playerName);
+        client.setSessionMode(GameClient.SessionMode.LOBBY);
         client.addLobbyUpdateListener(this);
         client.connect(ipAddress);
         game.gameClient = client; // Store client for cleanup
@@ -86,7 +87,7 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
     private void handleExitLobby() {
         // Send exit lobby request to server
         if (client != null) {
-            client.sendExitLobbyRequest(playerName);
+            client.sendExitLobbyRequest();
         }
         
         // Disconnect and return to start screen
