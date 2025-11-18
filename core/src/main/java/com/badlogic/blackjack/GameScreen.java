@@ -57,7 +57,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     private static final float RESOLVING_BETS_DELAY_TIME = 2.0f; // 2 second delay to view results
     private boolean isRestarting = false; // Flag to prevent multiple restarts
     private boolean exitMatchInitiated = false;
-    
+
     // Timer tracking for multiplayer clients
     private float clientTimer = 0f;
     private int lastClientPlayerIndex = -1;
@@ -98,6 +98,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         logic.setGameUI(ui);
         // Use constants from Main
         ecs.createBoardEntity(Main.WORLD_WIDTH, Main.WORLD_HEIGHT);
+        ecs.createDeckEntity();
         audioManager.playMusic(assets.bgMusic1, 0f);
 
         // Set up exit match callback
@@ -196,13 +197,13 @@ public class GameScreen implements Screen, LobbyUpdateListener {
             // Use network state instead of logic state for multiplayer clients
             GameState currentState = currentNetworkState;
             int currentPlayerIndex = currentNetworkPlayerIndex;
-            
+
             // Reset timer when player changes or state changes
             if (lastClientPlayerIndex != currentPlayerIndex || lastClientGameState != currentState) {
                 clientTimer = 0f;
                 lastClientPlayerIndex = currentPlayerIndex;
                 lastClientGameState = currentState;
-                
+
                 // Show/hide timer based on state
                 if (currentState == GameState.PLAYER_TURN) {
                     ui.resetTimer();
@@ -214,7 +215,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
                     ui.hideTimer();
                 }
             }
-            
+
             // Update timer in PLAYER_TURN and BETTING states
             if (currentState == GameState.PLAYER_TURN || currentState == GameState.BETTING) {
                 clientTimer += delta;
@@ -362,13 +363,13 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         // Update network state tracking for timer
         GameState newState = GameState.valueOf(update.currentGameState);
         int newPlayerIndex = update.currentPlayerIndex;
-        
+
         // Reset timer if state or player changed
         if (currentNetworkState != newState || currentNetworkPlayerIndex != newPlayerIndex) {
             clientTimer = 0f;
             lastClientPlayerIndex = newPlayerIndex;
             lastClientGameState = newState;
-            
+
             // Show/hide timer based on new state
             if (newState == GameState.PLAYER_TURN) {
                 ui.resetTimer();
@@ -380,7 +381,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
                 ui.hideTimer();
             }
         }
-        
+
         currentNetworkState = newState;
         currentNetworkPlayerIndex = newPlayerIndex;
 
@@ -492,12 +493,24 @@ public class GameScreen implements Screen, LobbyUpdateListener {
                }
            }
 
-        // 3. Highlight the current player
-        if (update.currentPlayerIndex >= 0 && update.currentPlayerIndex < logic.getPlayersList().size()) {
-            Player currentPlayer = logic.getPlayersList().get(update.currentPlayerIndex);
-            ui.updateCurrentPlayerColor(currentPlayer);
+        // 3. Highlight dealer or player depending on state
+        boolean dealerFocusState =
+            state == GameState.DEALING_DEALER ||
+            state == GameState.DEALING_PLAYERS ||
+            state == GameState.DEALER_TURN ||
+            state == GameState.RESOLVING_BETS ||
+            state == GameState.FINISHING_ROUND;
+
+        if (dealerFocusState) {
+            ui.focusDealerOnly();
         } else {
+            ui.resetDealerFocus();
+            if (update.currentPlayerIndex >= 0 && update.currentPlayerIndex < logic.getPlayersList().size()) {
+                Player currentPlayer = logic.getPlayersList().get(update.currentPlayerIndex);
+                ui.updateCurrentPlayerColor(currentPlayer);
+            } else {
 //            ui.updateCurrentPlayerColor(null); // No player is active, unhighlight all
+            }
         }
 
         // 4. Handle RESOLVING_BETS state - start delay and animation on clients

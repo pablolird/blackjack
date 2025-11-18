@@ -41,6 +41,14 @@ public class ECS {
         return card;
     }
 
+    public void createDeckEntity() {
+        Entity deck = entityManager.createEntity("deck");
+        Vector2 cardSize = new Vector2(assets.deck.getWidth()*0.65f, assets.deck.getHeight()*0.65f);
+
+        deck.addComponent(new CTransform(new Vector2(g.position.get("DECK")), cardSize));
+        deck.addComponent(new CSprite(assets.deck)); // Use the loaded board texture
+    }
+
     public void clearCardEntities() {
         List<Entity> toRemove = entityManager.getEntities().stream()
             .filter(e -> e.hasComponent(CCard.class))

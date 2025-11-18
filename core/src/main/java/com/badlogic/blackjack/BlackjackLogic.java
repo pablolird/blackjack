@@ -99,7 +99,35 @@ public class BlackjackLogic {
         this.stateListener = listener;
     }
 
+    private boolean isDealerFocusState(GameState state) {
+        if (state == null) {
+            return false;
+        }
+        switch (state) {
+            case DEALING_DEALER:
+            case DEALING_PLAYERS:
+            case DEALER_TURN:
+            case RESOLVING_BETS:
+            case FINISHING_ROUND:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void updateDealerFocusUI() {
+        if (gameUI == null) {
+            return;
+        }
+        if (isDealerFocusState(gameState)) {
+            gameUI.focusDealerOnly();
+        } else {
+            gameUI.resetDealerFocus();
+        }
+    }
+
     private void notifyStateChanged() {
+        updateDealerFocusUI();
         if (stateListener != null) {
             stateListener.onGameStateChanged();
         }
@@ -128,6 +156,7 @@ public class BlackjackLogic {
 
     public void setGameUI(UI ui) {
         this.gameUI = ui;
+        updateDealerFocusUI();
     }
 
     public void stand() {

@@ -49,16 +49,20 @@ public class StartScreen implements Screen {
 
         SelectBox<Integer> maxPlayers = new SelectBox<>(skin);
         maxPlayers.setItems(2,3,4,5,6,7);
-        table.add(maxPlayers).fill();
+        table.add(maxPlayers).fill().padLeft(50f);
 
         table.row();
 
+
+        Table confirm = new Table();
+
         TextButton backButton = createButton("Back", skin);
-        table.add(backButton).padRight(10f);
+        confirm.add(backButton).padRight(10f).padTop(50f);
 
         TextButton createGameButton = createButton("Create Game", skin);
-        table.add(createGameButton).padLeft(10f);
+        confirm.add(createGameButton).padLeft(10f).padTop(50f);
 
+        table.add(confirm).colspan(2);
 
         createGameButton.addListener(new ChangeListener() {
             @Override
@@ -94,7 +98,8 @@ public class StartScreen implements Screen {
         joinTable.add(playerNameLabel).align(Align.left).fill();
 
         TextField playerNameField = new TextField("Guest", skin);
-        joinTable.add(playerNameField).fill();
+        playerNameField.setMaxLength(12);
+        joinTable.add(playerNameField).fill().padLeft(40f).width(300f);
         // --- END NEW ROW ---
 
         joinTable.row().padBottom(10f);
@@ -103,7 +108,7 @@ public class StartScreen implements Screen {
         joinTable.add(ipLabel).align(Align.left).fill();
 
         TextField ipAddressField = new TextField("127.0.0.1", skin);
-        joinTable.add(ipAddressField).fill();
+        joinTable.add(ipAddressField).fill().padLeft(40f).width(300f);
 
         joinTable.row().padTop(20f);
 
@@ -149,18 +154,22 @@ public class StartScreen implements Screen {
         startTable.row();
 
         TextButton localGame = createButton("Local Game", skin);
+        localGame.getLabel().setFontScale(0.5f);
         startTable.add(localGame);
         startTable.row().pad(10f);
 
         TextButton hostGame = createButton("Host Game", skin);
+        hostGame.getLabel().setFontScale(0.5f);
         startTable.add(hostGame);
         startTable.row().padBottom(10f);;
 
         TextButton joinGame = createButton("Join Game", skin);
+        joinGame.getLabel().setFontScale(0.5f);
         startTable.add(joinGame);
         startTable.row();
 
         TextButton exitButton = createButton("Exit", skin);
+        exitButton.getLabel().setFontScale(0.5f);
         startTable.add(exitButton);
 
         localGame.addListener(new ChangeListener() {
@@ -209,38 +218,40 @@ public class StartScreen implements Screen {
 
         // Host properties capture
         TextField roomNameField = new TextField("My Blackjack Room",skin);
+        roomNameField.setMaxLength(20);
         SelectBox<Integer> maxPlayersSelectBox = new SelectBox<>(skin);
         maxPlayersSelectBox.setItems(2,3,4,5,6,7);
         // --- NEW: Player Name Field ---
         TextField playerNameField = new TextField("Host", skin);
+        playerNameField.setMaxLength(12);
 
         hostTable.row().padBottom(10f);
         Label roomName = new Label("Room name:", skin);
         hostTable.add(roomName).align(Align.left).fill();
-        hostTable.add(roomNameField); // USE THE TEXT FIELD
+        hostTable.add(roomNameField).width(300f).fill().padLeft(20f); // USE THE TEXT FIELD
 
         // --- NEW ROW FOR PLAYER NAME ---
         hostTable.row().padBottom(10f);
         Label playerNameLabel = new Label("Your Name:", skin);
         hostTable.add(playerNameLabel).align(Align.left).fill();
-        hostTable.add(playerNameField).fill();
+        hostTable.add(playerNameField).fill().padLeft(20f);
         // --- END NEW ROW ---
 
         hostTable.row().padBottom(10f);
         Label maxPlayersLabel = new Label("Max number of players: ", skin);
         maxPlayersLabel.setWidth(100);
         hostTable.add(maxPlayersLabel).align(Align.left).fill();
-        hostTable.add(maxPlayersSelectBox).fill(); // USE THE SELECT BOX
+        hostTable.add(maxPlayersSelectBox).fill().padLeft(20f); // USE THE SELECT BOX
         hostTable.row();
 
         // Button container for Back and Create Game
         Table buttonTable = new Table();
 
         TextButton backButton = createButton("Back", skin);
-        buttonTable.add(backButton).padRight(10f);
+        buttonTable.add(backButton).padRight(10f).padTop(50f);
 
         TextButton createGameButton = createButton("Create Game", skin); // RENAMED FROM refreshButton
-        buttonTable.add(createGameButton).padLeft(10f);
+        buttonTable.add(createGameButton).padLeft(10f).padTop(50f);
 
         hostTable.add(buttonTable).padTop(20f).colspan(2);
 

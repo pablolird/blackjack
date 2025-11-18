@@ -15,6 +15,7 @@ public class Assets {
     public TextureRegion[][] cardRegions; // grid of cards
     public Map<String, Sprite> cardMap;
     public Texture board;
+    public Texture deck;
     public int cardWidth;
     public int cardHeight;
 
@@ -34,8 +35,10 @@ public class Assets {
 
     public void loadFromFile() {
         board = new Texture(Gdx.files.internal("board.png"));
+        deck = new Texture(Gdx.files.internal("deck.png"));
         // Set the filter for the board texture
 //        board.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+
 
         Texture cardSheet = new Texture(Gdx.files.internal("TRUEminicards.png"));
         cardWidth = cardSheet.getWidth()/13;

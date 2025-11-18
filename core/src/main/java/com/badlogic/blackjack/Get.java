@@ -5,10 +5,6 @@ import com.badlogic.gdx.math.Vector2;
 import java.util.HashMap;
 
 public class Get {
-//    int[][] boardPositions = {{20,100},{25,105},{20,50},{25,55},{90,20},{95,25},{150,20},
-//        {155,25},{210,20},{215,25},{270,100},{275,105},{270,50},{275,55}};
-//    int[] boardRotations = {90,90,0,0,0,270,270};
-
     HashMap<String, Vector2> position;
     HashMap<String, Float> rotation;
     HashMap<String, Vector2> shift;
@@ -31,14 +27,14 @@ public class Get {
 
 
         scoreShift = new HashMap<>();
-        scoreShift.put("DEALER",  new Vector2(0, 70));
-        scoreShift.put("PLAYER1", new Vector2(0, 70));
-        scoreShift.put("PLAYER2", new Vector2(-140, 0));
-        scoreShift.put("PLAYER3", new Vector2(0, -70));
-        scoreShift.put("PLAYER4", new Vector2(0, -70));
-        scoreShift.put("PLAYER5", new Vector2(0, -70));
-        scoreShift.put("PLAYER6", new Vector2(120, 0));
-        scoreShift.put("PLAYER7", new Vector2(0, 70));
+        scoreShift.put("DEALER",  new Vector2(0, 104));
+        scoreShift.put("PLAYER1", new Vector2(-30, 104));
+        scoreShift.put("PLAYER2", new Vector2(-160, -20));
+        scoreShift.put("PLAYER3", new Vector2(-50, -90));
+        scoreShift.put("PLAYER4", new Vector2(0, -90));
+        scoreShift.put("PLAYER5", new Vector2(50, -90));
+        scoreShift.put("PLAYER6", new Vector2(160, -20));
+        scoreShift.put("PLAYER7", new Vector2(30, 104));
 
         rotation = new HashMap<>();
         rotation.put("DEALER", 0f);

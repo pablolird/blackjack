@@ -1,6 +1,7 @@
 package com.badlogic.blackjack;
 import com.badlogic.blackjack.audio.AudioManager;
 import com.badlogic.blackjack.audio.SoundType;
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
@@ -20,6 +21,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
+import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.blackjack.network.GameClient;
 import com.badlogic.blackjack.network.NetworkPacket;
@@ -31,12 +33,13 @@ import java.util.List;
 public class UI {
     private Stage stage;
     private Skin skin;
+    private Skin startGameSkin;
     private Timer timer;
     private Table actionTable;
-    private Window pauseMenu;
-    private Window gameOverMenu;
-    private Window gameOverWaitingMenu;
-    private Window gameOverLocalMenu;
+    private WindowMenu pauseMenu;
+    private WindowMenu gameOverMenu;
+    private WindowMenu gameOverWaitingMenu;
+    private WindowMenu gameOverLocalMenu;
     private BlackjackLogic blackjackLogic;
     private boolean paused;
     private AudioManager audioManager;
@@ -45,11 +48,12 @@ public class UI {
     private GameClient gameClient;
     Player currentPlayer;
 
-    private ArrayList<TextButton> bettingButtons;
-    private ArrayList<TextButton> mainButtons;
+    private ArrayList<GameButton> bettingButtons;
+    private ArrayList<GameButton> mainButtons;
 
     private HashMap<Integer, PlayerUI> playerUI;
     private Label dealerScoreLabel;
+    private Window dealerWindow;
 
     private Drawable coinDrawable;
     private Drawable clubDrawable;
@@ -89,13 +93,6 @@ public class UI {
         } else {
             throw new IllegalArgumentException("Invalid hex color format: " + value);
         }
-    }
-
-    TextButton createButton(String text, Color buttonColor) {
-        TextButton b = new TextButton(text, skin);
-        b.getLabel().setFontScale(0.5f);
-        b.setColor(buttonColor);
-        return b;
     }
 
     public void hideTimer() {
@@ -165,6 +162,7 @@ public class UI {
 
     public void init(BlackjackLogic bl, AudioManager audioManager, Main game, Viewport vp, SpriteBatch sb, String skin_path) {
         this.blackjackLogic = bl;
+        this.startGameSkin = game.assets.skin;
         this.playerUI = new HashMap<>();
         this.game = game;
         this.g = new Get();
@@ -188,23 +186,19 @@ public class UI {
         stage.addActor(actionTable);
 
         // Create 3 main action buttons (hit, stand, lock bet)
-        TextButton hitButton = createButton(" HIT ", HEX("#821010"));
-        TextButton standButton = createButton(" STAND ", HEX("#100d4f"));
-
-        // Initially disable them
-        hitButton.setDisabled(true);
-        standButton.setDisabled(true);
+        GameButton hitButton = new GameButton(skin," HIT ", HEX("#D91C1C"));
+        GameButton standButton = new GameButton(skin," STAND ", HEX("#2924AB"));
 
         // Add main buttons to array to disable them in group when needed
         mainButtons.add(hitButton);
         mainButtons.add(standButton);
 
         // Add betting buttons to array to disable them in group too
-        TextButton confirmBetButton = createButton(" Confirm Bet ", HEX("#e37622"));
+        GameButton confirmBetButton = new GameButton(skin," Confirm Bet ", HEX("#e37622"));
         bettingButtons.add(confirmBetButton);
 
         // Event listeners
-        hitButton.addListener(new ChangeListener() {
+        hitButton.button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if (gameClient != null) {
@@ -216,7 +210,7 @@ public class UI {
             }
         });
 
-        standButton.addListener(new ChangeListener() {
+        standButton.button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if (gameClient != null) {
@@ -229,7 +223,7 @@ public class UI {
             }
         });
 
-        confirmBetButton.addListener(new ChangeListener() {
+        confirmBetButton.button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if (gameClient != null) {
@@ -247,20 +241,20 @@ public class UI {
         String[] hexs = {"#43b32d","#96b32d","#c2ba21"};
 
         for (int i = 0; i < amounts.length; i++) {
-            TextButton t = createButton(" Bet "+amounts[i]+" ", HEX(hexs[i]));
+            GameButton t = new GameButton(skin," Bet "+amounts[i]+" ", HEX(hexs[i]));
             addBetButton(t,amounts[i]);
             bettingButtons.add(t);
-            actionTable.add(t).pad(10);
+            actionTable.add(t.button).pad(10);
         }
 
         // Then add main action buttons
-        actionTable.add(confirmBetButton).pad(10);
-        actionTable.add(hitButton).pad(10);
-        actionTable.add(standButton).pad(10);
+        actionTable.add(confirmBetButton.button).pad(10);
+        actionTable.add(hitButton.button).pad(10);
+        actionTable.add(standButton.button).pad(10);
     }
 
-    private void addBetButton(Button button, int amount) {
-        button.addListener(new ChangeListener() {
+    private void addBetButton(GameButton b, int amount) {
+        b.button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if (gameClient != null) {
@@ -274,17 +268,7 @@ public class UI {
     }
 
     private void buildPauseMenu() {
-        pauseMenu = new Window("Pause", skin);
-        pauseMenu.pad(20);
-
-        TextButton exitMatchButton = new TextButton("Exit Match", skin);
-        pauseMenu.add(exitMatchButton);
-        pauseMenu.pack(); // Size the window to its contents
-        pauseMenu.setPosition(stage.getWidth() / 2 - pauseMenu.getWidth() / 2, stage.getHeight() / 2 - pauseMenu.getHeight() / 2);
-        pauseMenu.getTitleLabel().setFontScale(0.5f);
-        stage.addActor(pauseMenu);
-        pauseMenu.setVisible(false); // Hide it by default
-
+        TextButton exitMatchButton = new TextButton("Exit Match", startGameSkin);
         // Exit Match button listener - will be set by GameScreen
         exitMatchButton.addListener(new ChangeListener() {
             @Override
@@ -299,48 +283,31 @@ public class UI {
             }
         });
 
+        pauseMenu = new WindowMenu("Pause",skin,stage);
+        pauseMenu.add(exitMatchButton);
+        stage.addActor(pauseMenu.window);
     }
 
     private void buildGameOverMenu() {
         // 4. Build the Game Over Menu for Host (with restart and exit options)
-        gameOverMenu = new Window("Game Over", skin);
-        gameOverMenu.pad(20);
-        gameOverMenu.padTop(50);
-
-        TextButton restartMatchButton = new TextButton("Restart Match", skin);
-        gameOverMenu.add(restartMatchButton).expand().pad(10);
-
-        gameOverMenu.row();
-        TextButton exitButton = new TextButton("Exit", skin);
-        gameOverMenu.add(exitButton).expand().pad(10);
-
-        gameOverMenu.pack(); // Size the window to its contents
-        gameOverMenu.setPosition(stage.getWidth() / 2 - gameOverMenu.getWidth() / 2, stage.getHeight() / 2 - gameOverMenu.getHeight() / 2);
-        stage.addActor(gameOverMenu);
-        gameOverMenu.setVisible(false); // Hide it by default
+        gameOverMenu = new WindowMenu("Game Over", skin, stage);
+        TextButton restartMatchButton = new TextButton("Restart Match", startGameSkin);
+        gameOverMenu.add(restartMatchButton);
+        TextButton exitButton = new TextButton("Exit", startGameSkin);
+        gameOverMenu.add(exitButton);
+        stage.addActor(gameOverMenu.window);
 
         // 5. Build the Game Over Waiting Menu for Non-Host players
-        gameOverWaitingMenu = new Window("Game Over", skin);
-        gameOverWaitingMenu.pad(20);
-        gameOverWaitingMenu.padTop(50);
-        Label waitingLabel = new Label("Waiting for host...", skin);
-        waitingLabel.setAlignment(Align.center);
-        gameOverWaitingMenu.add(waitingLabel).expand().pad(20);
-        gameOverWaitingMenu.pack();
-        gameOverWaitingMenu.setPosition(stage.getWidth() / 2 - gameOverWaitingMenu.getWidth() / 2, stage.getHeight() / 2 - gameOverWaitingMenu.getHeight() / 2);
-        stage.addActor(gameOverWaitingMenu);
-        gameOverWaitingMenu.setVisible(false); // Hide it by default
+        gameOverWaitingMenu = new WindowMenu("Game Over",skin,stage);
+        Label waitingLabel = new Label("Waiting for host...", startGameSkin);
+        gameOverWaitingMenu.add(waitingLabel);
+        stage.addActor(gameOverWaitingMenu.window);
 
         // 6. Build the Game Over Menu for Local Games (exit only, no restart)
-        gameOverLocalMenu = new Window("Game Over", skin);
-        gameOverLocalMenu.pad(20);
-        gameOverLocalMenu.padTop(50);
-        TextButton exitLocalButton = new TextButton("Exit", skin);
-        gameOverLocalMenu.add(exitLocalButton).expand().pad(10);
-        gameOverLocalMenu.pack();
-        gameOverLocalMenu.setPosition(stage.getWidth() / 2 - gameOverLocalMenu.getWidth() / 2, stage.getHeight() / 2 - gameOverLocalMenu.getHeight() / 2);
-        stage.addActor(gameOverLocalMenu);
-        gameOverLocalMenu.setVisible(false); // Hide it by default
+        gameOverLocalMenu = new WindowMenu("Game Over",skin,stage);
+        TextButton exitLocalButton = new TextButton("Exit", startGameSkin);
+        gameOverLocalMenu.add(exitLocalButton);
+        stage.addActor(gameOverLocalMenu.window);
 
         exitLocalButton.addListener(new ChangeListener() {
             @Override
@@ -409,50 +376,46 @@ public class UI {
     // --- BUILD LAYOUT (unchanged by your request) ---
     public void buildLayout(List<Player> players) {
         // DEALER
-        Window w = new Window("", skin);
-        w.setSize(90,90);
-        w.top().left(); // align contents of the window
-        // CONSTANT
-        Label dealerNameLabel = new Label("DEALER", skin);
-        dealerNameLabel.setFontScale(0.4f);
-        w.add(dealerNameLabel).colspan(2).padBottom(5f);
-        w.row();
-        // VARIABLE
+        PlayerWindow w = new PlayerWindow("DEALER",
+            skin,
+            stage,
+            g.position.get("DEALER_CARD"),
+            g.scoreShift.get("DEALER"));
+
+        dealerWindow = w.window;
+//        w.setSize(90,90);
         dealerScoreLabel = new Label("0", skin);
         dealerScoreLabel.setFontScale(0.4f);
         dealerScoreLabel.setColor(255/255f, 230/255f, 156/255f, 1);
-        Vector2 dealerPosition = g.position.get("DEALER_CARD");
         Vector2 dealerShift = g.scoreShift.get("DEALER");
-        w.setPosition(dealerPosition.x - (w.getWidth() / 2f) + dealerShift.x, dealerPosition.y - (w.getHeight() / 2f) + dealerShift.y);
-        w.add(new Image(clubDrawable));
-        w.add(dealerScoreLabel).padBottom(5);
-        stage.addActor(w);
+        Image m = new Image(clubDrawable);
+        m.setScaling(Scaling.fit);
+        w.add(m);
+        w.add(dealerScoreLabel);
+        stage.addActor(w.window);
 
         // PLAYERS
         for (int i = 0; i < players.size(); i++) {
-            Player p = players.get(i);
-            PlayerUI pUI = new PlayerUI(p.getName()+i, p.totalValue(), p.getBalance(), skin);
-
-            Window w2 = new Window("", skin);
-            w2.setSize(140,90);
-            w2.add(pUI.playerName).colspan(2).padBottom(5f).center();
-            w2.row();
-
-            // ================================
-            // Check this shady math later.
             String playerKey = "PLAYER" + (i + 1) + "_CARD";
-            Vector2 position = g.position.get(playerKey);
-            if (position != null) {
-                w2.setPosition(position.x - (w2.getWidth() / 2f) + g.scoreShift.get("PLAYER" + (i + 1)).x,
-                    position.y - (w2.getHeight() / 2f) + g.scoreShift.get("PLAYER" + (i + 1)).y);
-            }
-            // ================================
+            Player p = players.get(i);
 
-            w2.add(new Image(coinDrawable));
+            PlayerWindow w2 = new PlayerWindow("PLAYER" + (i + 1),
+                skin,
+                stage,
+                g.position.get(playerKey),
+                g.scoreShift.get("PLAYER" + (i + 1)));
+
+            PlayerUI pUI = new PlayerUI(w2.window, w2.window.getTitleLabel(), p.totalValue(), p.getBalance(), skin);
+
+            Image m3 = new Image(coinDrawable);
+            m3.setScaling(Scaling.fit);
+            w2.add(m3);
             w2.add(pUI.playerBalance);
-            w2.add(new Image(clubDrawable));
-            w2.add(pUI.playerScore).padBottom(5f);
-            stage.addActor(w2);
+            Image m2 = new Image(clubDrawable);
+            m2.setScaling(Scaling.fit);
+            w2.add(m2);
+            w2.add(pUI.playerScore);
+            stage.addActor(w2.window);
 
             // Store UI in map for later access
             playerUI.put(p.getID(), pUI);
@@ -497,6 +460,33 @@ public class UI {
         stage.draw();
     }
 
+    private void resetPlayerWindows(Window.WindowStyle defaultStyle) {
+        for (PlayerUI pUI : playerUI.values()) {
+            pUI.playerWindow.setStyle(defaultStyle);
+            pUI.playerName.setColor(Color.WHITE);
+        }
+    }
+
+    private void setDealerStyle(Window.WindowStyle style) {
+        if (dealerWindow != null) {
+            dealerWindow.setStyle(style);
+        }
+    }
+
+    public void focusDealerOnly() {
+        Window.WindowStyle defaultStyle = skin.get("default", Window.WindowStyle.class);
+        Window.WindowStyle focusedStyle = skin.get("focused", Window.WindowStyle.class);
+
+        resetPlayerWindows(defaultStyle);
+        setDealerStyle(focusedStyle);
+        currentPlayer = null;
+    }
+
+    public void resetDealerFocus() {
+        Window.WindowStyle defaultStyle = skin.get("default", Window.WindowStyle.class);
+        setDealerStyle(defaultStyle);
+    }
+
     public void updateCurrentPlayerColor(Player p) {
         if (currentPlayer != null) {
             PlayerUI prev = playerUI.get(p.getID());
@@ -508,15 +498,17 @@ public class UI {
     }
 
     public void setCurrentPlayer(Player p) {
-        for (PlayerUI pUI : playerUI.values()) {
-            pUI.playerName.setColor(HEX("#FFF"));
-        }
+        Window.WindowStyle defaultStyle = skin.get("default", Window.WindowStyle.class);
+        Window.WindowStyle focusedStyle = skin.get("focused", Window.WindowStyle.class);
+
+        resetPlayerWindows(defaultStyle);
+        setDealerStyle(defaultStyle);
 
         currentPlayer = p;
         if (currentPlayer != null) {
             PlayerUI current = playerUI.get(p.getID());
             if (current != null) {
-                current.playerName.setColor(Color.GREEN);
+                current.playerWindow.setStyle(focusedStyle);
             }
         }
     }
@@ -532,13 +524,13 @@ public class UI {
 
     public void showPlayerActionPanel(boolean visible) {
         for (int i = 0; i < mainButtons.toArray().length; i++) {
-            mainButtons.get(i).setDisabled(!visible);
+            mainButtons.get(i).toggleDisable(!visible);
         }
     }
 
     public void showBettingPanel(boolean visible) {
         for (int i = 0; i < bettingButtons.toArray().length; i++) {
-            bettingButtons.get(i).setDisabled(!visible);
+            bettingButtons.get(i).toggleDisable(!visible);
         }
     }
 

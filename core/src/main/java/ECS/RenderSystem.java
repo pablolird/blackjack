@@ -10,6 +10,7 @@ public class RenderSystem {
     public void render(List<Entity> entities, SpriteBatch spriteBatch) {
         for (Entity e : entities) {
             if (e.hasComponent(CSprite.class) && e.hasComponent(CTransform.class)) {
+                if (e.m_tag.equals("deck")) continue;
                 CSprite spriteComponent = (CSprite) e.getComponent(CSprite.class);
                 CTransform transformComponent = (CTransform) e.getComponent(CTransform.class);
 
@@ -22,11 +23,22 @@ public class RenderSystem {
                 sprite.setOriginCenter();
                 sprite.setOriginBasedPosition(position.x, position.y);
                 sprite.setRotation(rotation);
-
-
-
                 sprite.draw(spriteBatch);
             }
         }
+        Entity e = entities.get(1);
+        CSprite spriteComponent = (CSprite) e.getComponent(CSprite.class);
+        CTransform transformComponent = (CTransform) e.getComponent(CTransform.class);
+
+        Sprite sprite = spriteComponent.getSprite();
+        float rotation = transformComponent.m_rotation;
+        Vector2 position = transformComponent.m_position;
+        Vector2 size = transformComponent.m_viewportSize;
+
+        sprite.setSize(size.x, size.y);
+        sprite.setOriginCenter();
+        sprite.setOriginBasedPosition(position.x, position.y);
+        sprite.setRotation(rotation);
+        sprite.draw(spriteBatch);
     }
 }
