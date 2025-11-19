@@ -31,7 +31,7 @@ public class GameServer implements GameStateListener {
     private String hostPlayerName; // Track the host player
     private BlackjackLogic gameLogic;
     private float animationTimer = 0f;
-    private static final float ANIMATION_DELAY = 0.4f; // Time to wait for animations (slightly longer than animation duration)
+    private static final float ANIMATION_DELAY = 0.4f; // Time to wait for animations
     private final List<String> queuedPlayerRemovals = new ArrayList<>(); // Players to remove at safe phase
 
     public GameServer(String roomName, int maxPlayers) {
@@ -43,14 +43,13 @@ public class GameServer implements GameStateListener {
     }
 
     private void registerPackets() {
-        // Must register all classes that will be sent over the network
-        // Register ArrayList first (Kryo needs this for collections)
+
         server.getKryo().register(ArrayList.class);
-        
+
         // Register nested packet classes before the ones that use them
         server.getKryo().register(NetworkPacket.CardInfo.class);
         server.getKryo().register(NetworkPacket.PlayerInfo.class);
-        
+
         // Register packet classes
         server.getKryo().register(NetworkPacket.RegisterPlayer.class);
         server.getKryo().register(NetworkPacket.LobbyUpdate.class);
@@ -80,9 +79,9 @@ public class GameServer implements GameStateListener {
                     NetworkPacket.RegisterPlayer packet = (NetworkPacket.RegisterPlayer) object;
                     // Check if lobby is full
                     if (connectedPlayers.size() < maxPlayers) {
-                        // Check for duplicate names and modify if necessary
+                        // Check for duplicate names and modify if necessary (need to update this logic, band-aid fix)
                         String finalName = ensureUniqueName(packet.name);
-                        
+
                         connectedPlayers.put(connection.getID(), finalName);
                         // First player to connect is the host
                         if (hostPlayerName == null) {
@@ -92,12 +91,11 @@ public class GameServer implements GameStateListener {
                         Gdx.app.log("GameServer", "Registered player: " + finalName + " (Total: " + connectedPlayers.size() + ")");
                         sendLobbyUpdate();
                     } else {
-                        // Lobby is full - notify the client before closing
+                        // Lobby is full, notify the client before closing
                         Gdx.app.log("GameServer", "Lobby full. Notifying and rejecting connection: " + packet.name);
                         NetworkPacket.LobbyFullResponse response = new NetworkPacket.LobbyFullResponse();
                         response.message = "Lobby is full";
                         connection.sendTCP(response);
-                        // Give a moment for the message to be sent, then close
                         connection.close();
                     }
                 } else if (object instanceof NetworkPacket.ExitMatchRequest) {
@@ -120,10 +118,8 @@ public class GameServer implements GameStateListener {
                         handleExitLobbyRequest(playerName, connection);
                     }
                 } else if (object instanceof NetworkPacket.PlayerAction) {
-                    // --- MODIFIED: Handle Game Actions ---
-                    if (gameLogic == null) return; // Ignore if game hasn't started
+                    if (gameLogic == null) return;
 
-                    // Rebuild player index map to ensure it's up-to-date (players may have been removed)
                     rebuildPlayerIndexMap();
 
                     NetworkPacket.PlayerAction action = (NetworkPacket.PlayerAction) object;
@@ -160,12 +156,7 @@ public class GameServer implements GameStateListener {
                                 gameLogic.stand();
                             }
                         }
-                        // --- END VALIDATION ---
 
-                        // IMPORTANT: Broadcast the new state to everyone after a valid action
-                        // Note: playerLockInBet and stand() will ALSO trigger onGameStateChanged(),
-                        // so this broadcast might be redundant, but it's safer to have it
-                        // to show immediate feedback (like adding to a bet).
                         sendGameStateUpdate();
 
                     } else {
@@ -175,7 +166,6 @@ public class GameServer implements GameStateListener {
                             Gdx.app.log("GameServer", "Unregistered player sent action: " + connection.getID());
                         }
                     }
-                    // --- END MODIFIED ---
                 }
             }
 
@@ -211,54 +201,43 @@ public class GameServer implements GameStateListener {
     public void sendStartGame() {
         NetworkPacket.StartGame start = new NetworkPacket.StartGame();
         start.maxPlayers = this.maxPlayers;
-        start.playerNames = new ArrayList<>(connectedPlayers.values()); // Include player names
+        start.playerNames = new ArrayList<>(connectedPlayers.values());
         server.sendToAllTCP(start);
 
-        // --- NEW: Server-Side Player Index Mapping ---
         ArrayList<String> playerNames = start.playerNames;
         for (int i = 0; i < playerNames.size(); i++) {
             playerNameToIndex.put(playerNames.get(i), i);
         }
         Gdx.app.log("GameServer", "Starting game with players: " + playerNames);
 
-        // --- NEW: Server-side logic initialization ---
         // We pass NULL for sequencer and UI, as the server doesn't render.
         this.gameLogic = new BlackjackLogic(null, playerNames);
-        this.gameLogic.setGameUI(null); // Explicitly set UI to null
-        this.gameLogic.setGameStateListener(this); // Set the callback
+        this.gameLogic.setGameUI(null);
+        this.gameLogic.setGameStateListener(this);
 
-        // Manually call update(0) once to kick-start the logic
-        // from STARTING to BETTING, which triggers the first broadcast.
         this.gameLogic.update(0);
-        // --- END NEW ---
     }
 
     @Override
     public void onGameStateChanged() {
-        // This is called by gameLogic.notifyStateChanged()
+
         Gdx.app.log("GameServer", "Logic state changed, broadcasting update...");
         sendGameStateUpdate();
-        
-        // For animation states, we need to wait before continuing
+
         GameState state = gameLogic.getGameState();
-        if (state == GameState.ANIMATIONS_IN_PROGRESS || 
-            state == GameState.DEALING_DEALER || 
+        if (state == GameState.ANIMATIONS_IN_PROGRESS ||
+            state == GameState.DEALING_DEALER ||
             state == GameState.DEALING_PLAYERS ||
             state == GameState.FINISHING_ROUND) {
             animationTimer = ANIMATION_DELAY;
         }
-        // RESOLVING_BETS has its own delay (2 seconds) handled in BlackjackLogic
     }
-    
-    /**
-     * Updates the server's game logic. Should be called periodically (e.g., from GameScreen render loop if host).
-     * For animation states, this handles the delay before continuing.
-     */
+
     public void update(float delta) {
         if (gameLogic == null) return;
-        
+
         GameState state = gameLogic.getGameState();
-        
+
         // Handle animation delay
         if (animationTimer > 0) {
             animationTimer -= delta;
@@ -268,7 +247,7 @@ public class GameServer implements GameStateListener {
             }
             return;
         }
-        
+
         // Auto-advance certain states
         switch (state) {
             case DEALING_DEALER:
@@ -279,7 +258,7 @@ public class GameServer implements GameStateListener {
                 break;
             case RESOLVING_BETS:
             case FINISHING_ROUND:
-                // Process queued player removals at safe phase
+                // Remove players that disconnected or lost
                 processQueuedPlayerRemovals();
                 gameLogic.update(delta);
                 break;
@@ -288,19 +267,15 @@ public class GameServer implements GameStateListener {
                 break;
             case BETTING:
             case PLAYER_TURN:
-                // These states require player input, but we still need to update for auto-action timer
+                // Sync player turn
                 gameLogic.update(delta);
                 break;
             case GAME_OVER:
-                // Final state, stop ticking
                 break;
         }
     }
 
-    /**
-     * Rebuilds the playerNameToIndex map based on current player list.
-     * Should be called whenever players are removed to keep indices in sync.
-     */
+    // Rebuilds player order/list after removal
     private void rebuildPlayerIndexMap() {
         playerNameToIndex.clear();
         List<Player> players = gameLogic.getPlayersList();
@@ -314,21 +289,14 @@ public class GameServer implements GameStateListener {
         if (gameLogic == null) return;
 
         NetworkPacket.GameStateUpdate update = new NetworkPacket.GameStateUpdate();
-        // --- MODIFIED ---
         update.currentGameState = gameLogic.getGameState().name();
 
-        // Rebuild player index map to ensure it's in sync with current player list
-        // This is important when players are removed
         rebuildPlayerIndexMap();
 
-        // Determine current player for turn-based phases
-        // --- MODIFIED ---
         GameState currentPhase = gameLogic.getGameState();
 
         if (currentPhase == GameState.PLAYER_TURN || currentPhase == GameState.BETTING) {
-            // --- MODIFIED ---
             if (gameLogic.getCurrentPlayerIndex() < gameLogic.getPlayersList().size()) {
-                // --- MODIFIED ---
                 Player currentPlayer = gameLogic.getPlayersList().get(gameLogic.getCurrentPlayerIndex());
                 update.currentPlayerName = currentPlayer.getName(); // This will work now
                 update.currentPlayerIndex = gameLogic.getCurrentPlayerIndex();
@@ -344,11 +312,8 @@ public class GameServer implements GameStateListener {
             || currentPhase == GameState.RESOLVING_BETS
             || currentPhase == GameState.FINISHING_ROUND);
 
-        // --- MODIFIED ---
-        // (Accessing m_currentCards is OK because it's public in Dealer.java)
         for (int i = 0; i < gameLogic.getDealer().m_currentCards.size(); i++) {
             Card c = gameLogic.getDealer().m_currentCards.get(i);
-            // ... (CardInfo logic remains the same)
             NetworkPacket.CardInfo info = new NetworkPacket.CardInfo();
             info.id = c.m_id;
             info.rank = c.getRank();
@@ -359,13 +324,11 @@ public class GameServer implements GameStateListener {
 
         // 2. Player States - only send active players
         update.players = new ArrayList<>();
-        // --- MODIFIED ---
         for (Player p : gameLogic.getPlayersList()) {
-            // Only send active players
             if (!p.isActive()) {
                 continue;
             }
-            
+
             NetworkPacket.PlayerInfo pInfo = new NetworkPacket.PlayerInfo();
             pInfo.name = p.getName();
             pInfo.balance = p.getBalance();
@@ -373,9 +336,7 @@ public class GameServer implements GameStateListener {
             pInfo.isActive = p.isActive();
 
             pInfo.cards = new ArrayList<>();
-            // (Accessing m_currentCards is OK because it's public in Dealer.java, which Player extends)
             for (Card c : p.m_currentCards) {
-                // ... (CardInfo logic remains the same)
                 NetworkPacket.CardInfo info = new NetworkPacket.CardInfo();
                 info.id = c.m_id;
                 info.rank = c.getRank();
@@ -389,12 +350,12 @@ public class GameServer implements GameStateListener {
         server.sendToAllTCP(update);
         Gdx.app.log("GameServer", "Broadcasted state: " + update.currentGameState + " (Current Player: " + update.currentPlayerName + ")");
     }
-    
+
     private void handleExitMatchRequest(String playerName, Connection connection) {
         if (playerName == null) return;
-        
+
         boolean isHost = playerName.equals(hostPlayerName);
-        
+
         if (isHost) {
             // Host exited - send exit response to all clients and stop server
             Gdx.app.log("GameServer", "Host " + playerName + " exited - ending match for all players and stopping server");
@@ -402,32 +363,32 @@ public class GameServer implements GameStateListener {
             response.hostExited = true;
             response.exitedPlayerName = playerName;
             server.sendToAllTCP(response);
-            
+
             // Close all connections
             for (Connection conn : server.getConnections()) {
                 conn.close();
             }
-            
+
             // Stop the server
             server.stop();
             Gdx.app.log("GameServer", "Server stopped after host exit");
         } else {
             // Non-host exited - disconnect them immediately
             Gdx.app.log("GameServer", "Non-host " + playerName + " exited - disconnecting");
-            
+
             // Send exit response before closing connection
             NetworkPacket.ExitMatchResponse response = new NetworkPacket.ExitMatchResponse();
             response.hostExited = false;
             response.exitedPlayerName = playerName;
             connection.sendTCP(response);
-            
+
             // Remove from connection tracking
             connectedPlayers.remove(connection.getID());
             playerNameToIndex.remove(playerName);
-            
+
             // Close the connection
             connection.close();
-            
+
             // If game hasn't started, update lobby
             if (gameLogic == null) {
                 sendLobbyUpdate();
@@ -439,31 +400,29 @@ public class GameServer implements GameStateListener {
             }
         }
     }
-    
-    /**
-     * Ensures a player name is unique by appending a hyphen if a duplicate exists.
-     * @param requestedName The name the player requested
-     * @return A unique name (either the original or with hyphen appended)
-     */
+
+    // Adds a hyphen to duplicate player names when joining lobby
+    // Necessary due to the fact that the server uses player name as the ID to identify each player
+    // Should probably be changed later.
     private String ensureUniqueName(String requestedName) {
         String finalName = requestedName;
-        
+
         // Check if name already exists in connected players
         while (connectedPlayers.containsValue(finalName)) {
             // Append a hyphen to make it unique
             finalName = finalName + "-";
         }
-        
+
         if (!finalName.equals(requestedName)) {
             Gdx.app.log("GameServer", "Name conflict: " + requestedName + " renamed to " + finalName);
         }
-        
+
         return finalName;
     }
-    
+
     private void processQueuedPlayerRemovals() {
         if (queuedPlayerRemovals.isEmpty() || gameLogic == null) return;
-        
+
         GameState currentState = gameLogic.getGameState();
         // Safe to remove players after resolving bets
         if (currentState == GameState.RESOLVING_BETS || currentState == GameState.FINISHING_ROUND) {
@@ -476,28 +435,27 @@ public class GameServer implements GameStateListener {
             sendGameStateUpdate();
         }
     }
-    
+
     private void handleExitLobbyRequest(String playerName, Connection connection) {
         if (playerName == null) return;
-        
+
         boolean isHost = playerName.equals(hostPlayerName);
-        
+
         if (isHost) {
             // Host exited lobby - close all connections and stop server
             Gdx.app.log("GameServer", "Host " + playerName + " exited lobby - closing all connections");
             NetworkPacket.ExitLobbyResponse response = new NetworkPacket.ExitLobbyResponse();
             response.hostExited = true;
             response.exitedPlayerName = playerName;
-            
+
             // Send response to all clients (including host's own client)
             try {
                 server.sendToAllTCP(response);
             } catch (Exception e) {
                 Gdx.app.error("GameServer", "Error sending exit lobby response: " + e.getMessage());
             }
-            
+
             // Close all connections and stop server
-            // Do this in postRunnable to avoid blocking the network thread
             Gdx.app.postRunnable(() -> {
                 try {
                     // Close all connections first
@@ -509,7 +467,7 @@ public class GameServer implements GameStateListener {
                             // Ignore errors when closing connections
                         }
                     }
-                    
+
                     // Stop the server
                     server.stop();
                     Gdx.app.log("GameServer", "Server stopped after host exit lobby");
@@ -520,48 +478,48 @@ public class GameServer implements GameStateListener {
         } else {
             // Non-host exited lobby - remove them
             Gdx.app.log("GameServer", "Non-host " + playerName + " exited lobby");
-            
+
             // Send exit response before closing connection
             NetworkPacket.ExitLobbyResponse response = new NetworkPacket.ExitLobbyResponse();
             response.hostExited = false;
             response.exitedPlayerName = playerName;
             connection.sendTCP(response);
-            
+
             // Remove from connection tracking
             connectedPlayers.remove(connection.getID());
             playerNameToIndex.remove(playerName);
-            
+
             // Close the connection
             connection.close();
-            
+
             // Update lobby
             sendLobbyUpdate();
         }
     }
-    
+
     private void handleRestartMatchRequest() {
         if (gameLogic == null) {
             Gdx.app.log("GameServer", "Cannot restart: game not started");
             return;
         }
-        
+
         // Get list of currently connected players
         ArrayList<String> playerNames = new ArrayList<>(connectedPlayers.values());
         Gdx.app.log("GameServer", "Restarting match with players: " + playerNames);
-        
+
         // Send restart response to all clients
         NetworkPacket.RestartMatchResponse response = new NetworkPacket.RestartMatchResponse();
         response.playerNames = playerNames;
         server.sendToAllTCP(response);
-        
+
         // Restart the game logic with the same players
         this.gameLogic = new BlackjackLogic(null, playerNames);
         this.gameLogic.setGameUI(null);
         this.gameLogic.setGameStateListener(this);
-        
+
         // Rebuild player index map
         rebuildPlayerIndexMap();
-        
+
         // Start the new game
         this.gameLogic.update(0);
     }

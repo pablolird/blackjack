@@ -18,11 +18,11 @@ public class BlackjackLogic {
     private int nextPlayerId = 0;
     private boolean betsResolved = false;
     private float resolvingBetsDelay = 0f;
-    private static final float RESOLVING_BETS_DELAY_TIME = 2.0f; // 2 second delay to view results
+    private static final float RESOLVING_BETS_DELAY_TIME = 2.0f; // 2-second delay to view results
     private float cardReturnAnimationDelay = 0f;
     private static final float CARD_RETURN_ANIMATION_TIME = 1.75f; // Time to wait for card return animation to complete (0.25s per player + dealer)
     private float dealerTurnDelay = 0f;
-    private static final float DEALER_TURN_DELAY_TIME = 1.0f; // 1 second delay before dealer turn starts
+    private static final float DEALER_TURN_DELAY_TIME = 1.0f; // 1-second delay before dealer turn starts
     private float playerActionTimer = 0f;
     public static final float PLAYER_ACTION_TIMEOUT = 15.0f; // 15 second timeout for player actions
     private int lastPlayerIndex = -1; // Track when player changes to reset timer
@@ -593,7 +593,7 @@ public class BlackjackLogic {
                         }
                     }
                     betsResolved = true;
-                    resolvingBetsDelay = RESOLVING_BETS_DELAY_TIME; // Start 2 second delay
+                    resolvingBetsDelay = RESOLVING_BETS_DELAY_TIME; // Start 2-second delay
                 }
 
                 // Wait for delay to complete before starting card return animation

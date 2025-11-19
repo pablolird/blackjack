@@ -48,13 +48,13 @@ public class GameClient {
     }
 
     private void registerPackets() {
-        // Register ArrayList first (Kryo needs this for collections)
+        // Register ArrayList
         client.getKryo().register(ArrayList.class);
-        
+
         // Register nested packet classes before the ones that use them
         client.getKryo().register(NetworkPacket.CardInfo.class);
         client.getKryo().register(NetworkPacket.PlayerInfo.class);
-        
+
         // Register packet classes
         client.getKryo().register(NetworkPacket.RegisterPlayer.class);
         client.getKryo().register(NetworkPacket.LobbyUpdate.class);
@@ -77,7 +77,6 @@ public class GameClient {
             public void received(Connection connection, Object object) {
                 if (object instanceof NetworkPacket.LobbyUpdate) {
                     final NetworkPacket.LobbyUpdate update = (NetworkPacket.LobbyUpdate) object;
-                    // Run listener callback on the LibGDX render thread
                     Gdx.app.postRunnable(() -> {
                         for (LobbyUpdateListener listener : listeners) {
                             listener.onLobbyUpdate(update);
@@ -91,14 +90,12 @@ public class GameClient {
                         }
                     });
                 } else if (object instanceof NetworkPacket.GameStateUpdate) {
-                    // --- NEW: Handle Game State Update ---
                     final NetworkPacket.GameStateUpdate update = (NetworkPacket.GameStateUpdate) object;
                     Gdx.app.postRunnable(() -> {
                         for (LobbyUpdateListener listener : listeners) {
                             listener.onGameStateUpdate(update);
                         }
                     });
-                    // --- END NEW ---
                 } else if (object instanceof NetworkPacket.ExitMatchResponse) {
                     final NetworkPacket.ExitMatchResponse response = (NetworkPacket.ExitMatchResponse) object;
                     Gdx.app.postRunnable(() -> {
@@ -134,8 +131,6 @@ public class GameClient {
             public void disconnected(Connection connection) {
                 Gdx.app.log("GameClient", "Disconnected from server.");
                 // Treat disconnection as exit match - notify listeners
-                // The server will handle sending ExitMatchResponse if needed
-                // For now, we'll let the server handle it through the disconnect handler
             }
         });
     }
@@ -143,12 +138,11 @@ public class GameClient {
     public void addLobbyUpdateListener(LobbyUpdateListener listener) {
         listeners.add(listener);
     }
-    
+
     public void removeLobbyUpdateListener(LobbyUpdateListener listener) {
         listeners.removeValue(listener, true);
     }
 
-    // --- NEW: Helper method for sending actions ---
     public void sendAction(NetworkPacket.PlayerActionType type, int amount) {
         NetworkPacket.PlayerAction action = new NetworkPacket.PlayerAction();
         action.action = type;
@@ -159,8 +153,7 @@ public class GameClient {
     public void sendAction(NetworkPacket.PlayerActionType type) {
         sendAction(type, 0);
     }
-    // --- END NEW ---
-    
+
     public void sendExitMatchRequest() {
         exitRequested = true;
         if (!client.isConnected()) {
@@ -171,13 +164,13 @@ public class GameClient {
         client.sendTCP(request);
         Gdx.app.log("GameClient", "Sent exit match request");
     }
-    
+
     public void sendRestartMatchRequest() {
         NetworkPacket.RestartMatchRequest request = new NetworkPacket.RestartMatchRequest();
         client.sendTCP(request);
         Gdx.app.log("GameClient", "Sent restart match request");
     }
-    
+
     public void sendExitLobbyRequest(String playerName) {
         exitRequested = true;
         if (!client.isConnected()) {
@@ -193,10 +186,6 @@ public class GameClient {
         sendExitLobbyRequest(this.playerName);
     }
 
-    /**
-     * Attempts to connect to the server and automatically starts the client thread.
-     * @param ipAddress The IP address of the host.
-     */
     public void connect(final String ipAddress) {
         client.start();
 
@@ -214,7 +203,6 @@ public class GameClient {
 
             } catch (IOException e) {
                 Gdx.app.error("GameClient", "Failed to connect to " + ipAddress + ": " + e.getMessage());
-                // Handle connection failure, e.g., transition back to start screen
             }
         });
     }
