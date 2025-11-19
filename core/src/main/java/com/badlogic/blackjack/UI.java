@@ -52,6 +52,7 @@ public class UI {
     private ArrayList<GameButton> mainButtons;
 
     private HashMap<Integer, PlayerUI> playerUI;
+    private HashMap<Integer, Integer> playerIdToVisualPosition; // Maps Player ID -> visual position index (1-based)
     private Label dealerScoreLabel;
     private Window dealerWindow;
 
@@ -164,6 +165,7 @@ public class UI {
         this.blackjackLogic = bl;
         this.startGameSkin = game.assets.skin;
         this.playerUI = new HashMap<>();
+        this.playerIdToVisualPosition = new HashMap<>();
         this.game = game;
         this.g = new Get();
         this.paused = false;
@@ -419,18 +421,25 @@ public class UI {
 
             // Store UI in map for later access
             playerUI.put(p.getID(), pUI);
+            // Store visual position index (1-based) for card dealing
+            playerIdToVisualPosition.put(p.getID(), i + 1);
         }
     }
 
     // --- REBUILD LAYOUT ---
     public void rebuildLayout(List<Player> players, Dealer d) {
-        for (int i = 0; i < players.toArray().length; i++) {
+        // Note: This method doesn't rebuild windows, just updates scores/balances.
+        // Visual positions remain the same as originally assigned in buildLayout.
+        for (int i = 0; i < players.size(); i++) {
             Player p = players.get(i);
             // Get corresponding player UI
-            PlayerUI pUI =  playerUI.get(p.getID());
-
-            pUI.updateBalance(p.getBalance());
-            pUI.updateScore(p.totalValue());
+            PlayerUI pUI = playerUI.get(p.getID());
+            
+            if (pUI != null) {
+                pUI.updateBalance(p.getBalance());
+                pUI.updateScore(p.totalValue());
+                // Visual position mapping is preserved from buildLayout - don't reassign
+            }
         }
 
         updateDealerScore(d);
@@ -451,6 +460,17 @@ public class UI {
 
     public void updatePlayerBalance(Player p) {
         playerUI.get(p.getID()).updateBalance(p.getBalance());
+    }
+
+    /**
+     * Gets the visual position index (1-based) for a player.
+     * This is used to determine which PLAYER position slot the player occupies on screen.
+     * @param p The player
+     * @return Visual position index (1-7), or -1 if player not found
+     */
+    public int getVisualPositionIndex(Player p) {
+        Integer visualPos = playerIdToVisualPosition.get(p.getID());
+        return visualPos != null ? visualPos : -1;
     }
 
     public void update(float delta) {

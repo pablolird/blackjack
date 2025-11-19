@@ -98,7 +98,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         logic.setGameUI(ui);
         ecs.createBoardEntity(Main.WORLD_WIDTH, Main.WORLD_HEIGHT);
         ecs.createDeckEntity();
-        audioManager.playMusic(assets.bgMusic1, 0.3f);
+        audioManager.playMusic(assets.bgMusic1, 0.25f);
 
         // Set up exit match callback
         game.exitMatchCallback = this::handleExitMatch;
@@ -651,7 +651,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
             }
 
             if (targetPlayer != null) {
-                sequencer.createDealCardAction(targetPlayer, pending.playerIndex, pending.cardInfo.id);
+                sequencer.createDealCardAction(targetPlayer, pending.playerIndex, pending.cardInfo.id, ui);
                 ui.updatePlayerScore(targetPlayer);
             } else {
                 Gdx.app.error("GameScreen", "Could not find player: " + pending.playerName);

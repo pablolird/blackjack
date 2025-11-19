@@ -135,20 +135,34 @@ public class Sequencer {
      * while the new card (which was just created) is animated from the deck to its final position.
      *
      * @param p The Player receiving the card.
-     * @param playerIndex The index of the player (for positioning).
+     * @param playerIndex The index of the player (for positioning) - used as fallback if UI is null.
+     * @param ui Optional UI reference to look up visual position index. If provided, uses visual position instead of array index.
      * @return A ParallelAction containing all the necessary animations.
      */
     // MODIFICATIONS TO MAKE:
     //  - MAKE CARDS CENTERED WITH RESPECT TO PLAYER DECK POSITION
     public void createDealCardAction(Player p, int playerIndex) {
-        createDealCardAction(p, playerIndex, -1);
+        createDealCardAction(p, playerIndex, -1, null);
     }
 
     public void createDealCardAction(Player p, int playerIndex, int cardId) {
+        createDealCardAction(p, playerIndex, cardId, null);
+    }
+
+    public void createDealCardAction(Player p, int playerIndex, int cardId, UI ui) {
         float duration = 0.25f;
         List<Card> cards = p.m_currentCards;
         if (cards.isEmpty()) {
             return; // Cannot deal a card if the hand is empty.
+        }
+
+        // Determine visual position index: use UI lookup if available, otherwise use array index
+        int visualPositionIndex;
+        if (ui != null) {
+            int visualPos = ui.getVisualPositionIndex(p);
+            visualPositionIndex = visualPos > 0 ? visualPos : (playerIndex + 1); // Fallback to array index if not found
+        } else {
+            visualPositionIndex = playerIndex + 1; // Use array index as fallback
         }
 
         // The newest card is the last one in the list.
@@ -174,8 +188,8 @@ public class Sequencer {
         // This action will hold all shifting and moving animations so they run at the same time.
         ParallelAction parallelAction = new ParallelAction();
 
-        // Get the specific shift vector for this player position.
-        Vector2 shiftAmount = g.shift.get("PLAYER" + (playerIndex + 1));
+        // Get the specific shift vector for this player position using visual position index.
+        Vector2 shiftAmount = g.shift.get("PLAYER" + visualPositionIndex);
 
         // 1. Create ShiftToAction for all existing cards (from index 0 to n-2).
         for (Card existingCard : cards) {
@@ -191,9 +205,9 @@ public class Sequencer {
         }
 
         // 2. Create a MoveToAction for the new card.
-        // The target position is the base position for that player's hand.
-        Vector2 playerPosition = g.position.get("PLAYER" + (playerIndex + 1) + "_CARD");
-        float playerRotation = g.rotation.get("PLAYER" + (playerIndex + 1));
+        // The target position is the base position for that player's hand using visual position index.
+        Vector2 playerPosition = g.position.get("PLAYER" + visualPositionIndex + "_CARD");
+        float playerRotation = g.rotation.get("PLAYER" + visualPositionIndex);
 
         Action moveAction = new MoveToAction(newCardEntity, playerPosition.cpy(), playerRotation, duration);
         parallelAction.add(moveAction);
@@ -205,8 +219,21 @@ public class Sequencer {
     }
 
     public SequenceAction DealCardToPlayer(Player p, int playerIndex) {
+        return DealCardToPlayer(p, playerIndex, null);
+    }
+
+    public SequenceAction DealCardToPlayer(Player p, int playerIndex, UI ui) {
         float duration = 3f;
         List<Card> cards = p.m_currentCards;
+
+        // Determine visual position index: use UI lookup if available, otherwise use array index
+        int visualPositionIndex;
+        if (ui != null) {
+            int visualPos = ui.getVisualPositionIndex(p);
+            visualPositionIndex = visualPos > 0 ? visualPos : (playerIndex + 1); // Fallback to array index if not found
+        } else {
+            visualPositionIndex = playerIndex + 1; // Use array index as fallback
+        }
 
         // Get the first and second cards
         Card firstCardObject = cards.get(0);
@@ -216,15 +243,15 @@ public class Sequencer {
         Entity firstCardEntity = ecs.createCardEntity(firstCardObject);
         Entity secondCardEntity = ecs.createCardEntity(secondCardObject);
 
-        // Define player position and card offsets
-        Vector2 playerPosition = g.position.get("PLAYER" + (playerIndex + 1) + "_CARD");
+        // Define player position and card offsets using visual position index
+        Vector2 playerPosition = g.position.get("PLAYER" + visualPositionIndex + "_CARD");
         Vector2 firstCardPosition = playerPosition.cpy();
         // 1. Move the first card into position
-        Action moveFirstCard = new MoveToAction(firstCardEntity, firstCardPosition, g.rotation.get("PLAYER" + (playerIndex + 1)) ,duration);
+        Action moveFirstCard = new MoveToAction(firstCardEntity, firstCardPosition, g.rotation.get("PLAYER" + visualPositionIndex) ,duration);
 
         // 2. Move the second card and shift the first card at the same time
-        Action moveSecondCard = new MoveToAction(secondCardEntity, firstCardPosition, g.rotation.get("PLAYER" + (playerIndex + 1)) ,duration);
-        Action shiftFirstCard = new ShiftToAction(firstCardEntity, g.shift.get("PLAYER" + (playerIndex + 1)), duration);
+        Action moveSecondCard = new MoveToAction(secondCardEntity, firstCardPosition, g.rotation.get("PLAYER" + visualPositionIndex) ,duration);
+        Action shiftFirstCard = new ShiftToAction(firstCardEntity, g.shift.get("PLAYER" + visualPositionIndex), duration);
 
         Action parallelMoveAndShift = new ParallelAction(moveSecondCard, shiftFirstCard);
 
@@ -235,12 +262,15 @@ public class Sequencer {
     }
 
     public void DealInitialCards(List<Player> players) {
+        DealInitialCards(players, null);
+    }
 
+    public void DealInitialCards(List<Player> players, UI ui) {
         SequenceAction dealInitialCardsAction = new SequenceAction();
 
         for(int i = 0; i < players.size(); i++)
         {
-            dealInitialCardsAction.add(DealCardToPlayer(players.get(i), i));
+            dealInitialCardsAction.add(DealCardToPlayer(players.get(i), i, ui));
         }
 
         this.addAction(dealInitialCardsAction);

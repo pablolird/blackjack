@@ -294,7 +294,7 @@ public class BlackjackLogic {
 
         Card dealtCard = deck.deal();
         curentPlayer.addCard(dealtCard);
-        sequencer.createDealCardAction(curentPlayer, current_playerIndex, dealtCard.m_id);
+        sequencer.createDealCardAction(curentPlayer, current_playerIndex, dealtCard.m_id, gameUI);
         if (gameUI != null) {
             gameUI.updatePlayerScore(curentPlayer);
         }
@@ -308,7 +308,7 @@ public class BlackjackLogic {
         Player p = playersList.get(current_playerIndex);
         Card dealtCard = deck.deal();
         p.addCard(dealtCard);
-        if(sequencer != null) sequencer.createDealCardAction(p,current_playerIndex, dealtCard.m_id);
+        if(sequencer != null) sequencer.createDealCardAction(p, current_playerIndex, dealtCard.m_id, gameUI);
         if(gameUI != null) gameUI.updatePlayerScore(p);
 
         if (checkForFiveCardCharlie(p)) {
@@ -459,7 +459,7 @@ public class BlackjackLogic {
                 if (curentPlayer.m_currentCards.size() < 2) {
                     Card dealtCard = deck.deal();
                     curentPlayer.addCard(dealtCard);
-                    if(sequencer != null) sequencer.createDealCardAction(curentPlayer, current_playerIndex, dealtCard.m_id); // Check for null
+                    if(sequencer != null) sequencer.createDealCardAction(curentPlayer, current_playerIndex, dealtCard.m_id, gameUI); // Check for null
                     if(gameUI != null) gameUI.updatePlayerScore(curentPlayer);
                     current_playerIndex++;
 
