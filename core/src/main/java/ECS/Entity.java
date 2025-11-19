@@ -7,7 +7,6 @@ public class Entity {
     String m_tag;
     HashMap<Class<?>, Object> m_components;
 
-    // The constructor is now very simple
     Entity(int id, String tag) {
         this.m_id = id;
         this.m_tag = tag;

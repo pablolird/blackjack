@@ -6,13 +6,13 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin; // <-- NEW IMPORT
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class Assets {
-    public TextureRegion[][] cardRegions; // grid of cards
+    public TextureRegion[][] cardRegions;
     public Map<String, Sprite> cardMap;
     public Texture board;
     public Texture deck;
@@ -25,7 +25,7 @@ public class Assets {
     public Sound standSFX;
     public Music bgMusic1;
 
-    public Skin skin; // <-- NEW FIELD: Skin for UI elements
+    public Skin skin;
 
     public Assets() {}
 
@@ -36,19 +36,16 @@ public class Assets {
     public void loadFromFile() {
         board = new Texture(Gdx.files.internal("board.png"));
         deck = new Texture(Gdx.files.internal("deck.png"));
-        // Set the filter for the board texture
-//        board.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-
 
         Texture cardSheet = new Texture(Gdx.files.internal("TRUEminicards.png"));
         cardWidth = cardSheet.getWidth()/13;
         cardHeight = cardSheet.getHeight()/4;
+
         // Set the filter for the card sheet texture
         cardSheet.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
 
         cardRegions = TextureRegion.split(cardSheet, cardWidth, cardHeight);
 
-        // Optional: build a flat map if you want easy name lookup
         cardMap = new HashMap<>();
         String[] suits = {"hearts", "diamonds", "clubs", "spades"};
         String[] ranks = {"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"};
@@ -66,16 +63,14 @@ public class Assets {
         bgMusic1 = Gdx.audio.newMusic(Gdx.files.internal("SongOption3.ogg"));
 
         try {
-            // Attempt to load from the 'ui' path first, as seen in your fallback logic
             this.skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
         } catch (Exception e) {
             Gdx.app.error("Assets", "Failed to load uiskin.json from 'ui/uiskin.json'", e);
-            // Fallback to the 'skin/x1' path
             try {
                 this.skin = new Skin(Gdx.files.internal("skin/x1/uiskin.json"));
             } catch (Exception e2) {
                 Gdx.app.error("Assets", "Failed to load uiskin.json from 'skin/x1/uiskin.json'. UI may fail.", e2);
-                this.skin = new Skin(); // Provide an empty skin to prevent crash
+                this.skin = new Skin();
             }
         }
     }

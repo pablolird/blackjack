@@ -18,13 +18,13 @@ import com.badlogic.blackjack.network.NetworkPacket.CardInfo;
 import java.util.ArrayList;
 import java.util.List;
 
-// Implement the Screen interface
+// Implement the Screen interface from libgdx
 public class GameScreen implements Screen, LobbyUpdateListener {
-    private final Main game; // Reference to the Main game class
+    private final Main game;
     private final FitViewport gameViewport;
     private final Viewport uiViewport;
-    private final SpriteBatch spriteBatch; // Will be the shared batch
-    private final Assets assets; // Will be the shared assets
+    private final SpriteBatch spriteBatch;
+    private final Assets assets;
 
     private final ECS ecs;
     private final Sequencer sequencer;
@@ -62,13 +62,13 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     private float clientTimer = 0f;
     private int lastClientPlayerIndex = -1;
     private GameState lastClientGameState = null;
-    private GameState currentNetworkState = null; // Track state from network updates
-    private int currentNetworkPlayerIndex = -1; // Track player index from network updates
+    private GameState currentNetworkState = null;
+    private int currentNetworkPlayerIndex = -1;
 
     public GameScreen(Main game, boolean isHost, List<String> playerNames) {
         this.game = game;
-        this.assets = game.assets; // Get shared assets
-        this.spriteBatch = game.spriteBatch; // Get shared sprite batch
+        this.assets = game.assets;
+        this.spriteBatch = game.spriteBatch;
 
         this.isHost = isHost;
         this.playerNames = playerNames;
@@ -84,19 +84,17 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         gameViewport = new FitViewport(Main.WORLD_WIDTH, Main.WORLD_HEIGHT);
         uiViewport = new FitViewport(960, 540);
 
-        // Assets are now loaded in Main.java
+        // Use layers
         audioManager = new AudioManager(assets);
         ecs = new ECS(assets);
         sequencer = new Sequencer(ecs, audioManager);
 
-
-        // Determine if this is a local game (no network client)
+        // Determine if this is a local game
         boolean isLocalGame = (game.gameClient == null);
         logic = new BlackjackLogic(sequencer, playerNames, isLocalGame);
         ui = new UI(uiViewport, spriteBatch, logic, audioManager, game);
 
         logic.setGameUI(ui);
-        // Use constants from Main
         ecs.createBoardEntity(Main.WORLD_WIDTH, Main.WORLD_HEIGHT);
         ecs.createDeckEntity();
         audioManager.playMusic(assets.bgMusic1, 0f);
@@ -126,9 +124,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
     private void handleExitMatch() {
         if (game.gameClient != null) {
-            // Send exit match request to server
-            // The server will send a response and close the connection
-            // We'll handle cleanup in onExitMatch() when we receive the response
+            // Multiplayer game, notify all players
             exitMatchInitiated = true;
             game.gameClient.sendExitMatchRequest();
         } else {
@@ -138,7 +134,6 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         }
     }
 
-    // --- Overload for existing local game calls, passing dummy values ---
     public GameScreen(Main game, int numPlayers) {
         this(game, false, createLocalPlayerNames(numPlayers));
     }
@@ -153,20 +148,15 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
     @Override
     public void render(float delta) {
-        // --- Update Logic ---
+
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             ui.togglePauseMenu();
         }
 
-        // Game logic continues even when pause menu is open (multiplayer)
-        // If host, update server logic (handles card dealing and state management)
-        // For local games, update logic directly
         if (game.gameClient == null) {
             // Local game - update logic directly
             logic.update(delta);
 
-            // Check for GAME_OVER state in local games and show menu
-            // Only show once to avoid repeated calls
             if (logic.getGameState() == GameState.GAME_OVER && !ui.isGameOverMenuVisible()) {
                 // For local games, always show host menu (restart/exit options)
                 ui.showGameOverMenu(true);
@@ -178,10 +168,9 @@ public class GameScreen implements Screen, LobbyUpdateListener {
             gameServer.update(delta);
         }
 
-        sequencer.update(delta); // Sequencer runs on all clients for smooth animations
+        sequencer.update(delta); // Sequencer runs on all clients for animations
 
         // Handle RESOLVING_BETS delay and animation on clients (multiplayer only)
-        // For local games, the logic handles everything directly
         if (game.gameClient != null && resolvingBetsDelay > 0) {
             resolvingBetsDelay -= delta;
             if (resolvingBetsDelay <= 0 && !cardReturnAnimationStarted) {
@@ -232,7 +221,6 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         ecs.update(delta);
         ui.update(delta);
 
-        // --- Render Logic ---
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -253,8 +241,6 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
     @Override
     public void dispose() {
-        // IMPORTANT: Do NOT dispose of shared assets or SpriteBatch here
-        // Only dispose of things created *by this screen*
 
         // Remove listener to prevent duplicate handling of network events
         if (game.gameClient != null) {
@@ -268,35 +254,29 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         ui.dispose();
     }
 
-    // Other required Screen methods
+
     @Override
     public void show() {
-        // Called when this screen becomes active
     }
 
     @Override
     public void hide() {
-        // Called when this screen is no longer active
     }
 
     @Override
     public void pause() {
-        // For handling game pause
     }
 
     @Override
     public void resume() {
-        // For handling game resume
     }
 
     @Override
     public void onLobbyUpdate(NetworkPacket.LobbyUpdate update) {
-        // Not used in GameScreen
     }
 
     @Override
     public void onGameStart(NetworkPacket.StartGame start) {
-        // Not used in GameScreen
     }
 
     @Override
@@ -343,12 +323,10 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
     @Override
     public void onExitLobby(NetworkPacket.ExitLobbyResponse response) {
-        // Not used in GameScreen (only in lobby screens)
     }
 
     @Override
     public void onLobbyFull(NetworkPacket.LobbyFullResponse response) {
-        // Not used in GameScreen (only in lobby screens)
     }
 
     @Override
@@ -385,7 +363,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         currentNetworkState = newState;
         currentNetworkPlayerIndex = newPlayerIndex;
 
-        // --- THIS IS THE ENTIRE CLIENT-SIDE IMPLEMENTATION ---
+        // CLIENT SIDE IMPLEMENTATION
 
         // 1. Update all local player data (balances, bets, active status) from the packet
         List<String> serverPlayerNames = new ArrayList<>();
@@ -429,13 +407,6 @@ public class GameScreen implements Screen, LobbyUpdateListener {
             logic.getPlayersList().removeAll(playersToRemove);
             int playersAfterRemoval = logic.getPlayersList().size();
 
-            // Adjust current player index if needed
-            int currentIndex = logic.getCurrentPlayerIndex();
-            if (currentIndex >= playersAfterRemoval) {
-                // Current player was removed or index is out of bounds, reset to 0
-                // Note: We can't directly set the index, but the server will handle this
-            }
-
             // Rebuild UI layout to reflect player removal
             ui.rebuildLayout(logic.getPlayersList(), logic.dealer);
 
@@ -470,8 +441,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
         // 2.5. Handle STARTING state - ensure everything is cleared for new round
         if (state == GameState.STARTING || state == GameState.BETTING) {
-            // Always clear cards and entities when starting a new round
-            // Server should have empty card lists at this point
+
             Dealer localDealer = logic.getDealer();
 
             // Force clear everything when starting new round
@@ -531,7 +501,6 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         // 5. Handle FINISHING_ROUND state - clear cards when server indicates they're cleared
         if (state == GameState.FINISHING_ROUND) {
             // Wait for animation to complete, then clear cards
-            // Make sure card return animation has finished before clearing
             if (!sequencer.isBusy() && cardReturnAnimationStarted) {
                 // Check if server has cleared cards (empty card lists)
                 if (update.dealerCards.isEmpty() && update.players.stream().allMatch(p -> p.cards.isEmpty())) {
@@ -594,8 +563,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
                     Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
                     localDealer.addCard(newCard);
                     pendingAnimations.add(new PendingAnimation(PendingAnimation.Type.DEALER, serverCardInfo, -1, null));
-                    // Don't update score here - wait for animation to start in processPendingAnimations()
-                    break; // Only one new card per update
+                    break;
                 }
             }
 
@@ -617,7 +585,6 @@ public class GameScreen implements Screen, LobbyUpdateListener {
                             Card newCard = new Card(serverCardInfo.id, serverCardInfo.rank, serverCardInfo.suit);
                             localPlayer.addCard(newCard);
                             pendingAnimations.add(new PendingAnimation(PendingAnimation.Type.PLAYER, serverCardInfo, playerIndex, serverPlayer.name));
-                            // Don't update score here - wait for animation to start in processPendingAnimations()
                         }
                     }
                 }

@@ -278,7 +278,7 @@ public class UI {
                 } else {
                     // Local game, just return to start screen
                     game.setScreen(new StartScreen(game));
-                    dispose();
+                    dispose(); // Dispose this screen
                 }
             }
         });
@@ -314,7 +314,7 @@ public class UI {
             public void changed(ChangeEvent event, Actor actor) {
                 // Local game - just return to start screen
                 game.setScreen(new StartScreen(game));
-                dispose(); // Dispose this screen
+                dispose();
             }
         });
 
@@ -325,7 +325,7 @@ public class UI {
                     game.exitMatchCallback.onExitMatch();
                 } else {
                     game.setScreen(new StartScreen(game));
-                    dispose(); // Dispose this screen
+                    dispose();
                 }
             }
         });
@@ -361,19 +361,19 @@ public class UI {
 
         // Check later where to put this
 
-        // =========================-------------------------------------------------
+        // =========================
         Texture coinTex = new Texture(Gdx.files.internal("coin1.png"));
         Texture clubTex = new Texture(Gdx.files.internal("spade.png"));
 
         // Wrap them in Drawables (needed for UI widgets)
         coinDrawable = new TextureRegionDrawable(new TextureRegion(coinTex));
         clubDrawable = new TextureRegionDrawable(new TextureRegion(clubTex));
-        // =========================-------------------------------------------------
+        // =========================
         buildLayout(bl.playersList);
 
     }
 
-    // --- BUILD LAYOUT (unchanged by your request) ---
+    // --- BUILD LAYOUT ---
     public void buildLayout(List<Player> players) {
         // DEALER
         PlayerWindow w = new PlayerWindow("DEALER",

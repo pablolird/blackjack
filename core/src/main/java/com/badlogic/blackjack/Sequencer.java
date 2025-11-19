@@ -33,7 +33,7 @@ public class Sequencer {
     }
 
     public void update(float delta) {
-        // Remove element avoiding iterator invalidation!
+        // Remove element avoiding iterator invalidation
         actions.removeIf(a -> a.update(delta));
     }
 

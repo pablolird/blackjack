@@ -57,12 +57,12 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
         root.add(roomNameLabel).pad(10).row();
         root.add(playerCounterLabel).pad(10).row();
         root.add(new ScrollPane(playersListLabel, skin)).expand().fill().pad(20).row();
-        root.add(new Label("Waiting for host to start match...", skin)).pad(20).row();
-        
-        // Add exit lobby button
+        root.add(new Label("Waiting for host...", skin)).pad(20).row();
+
+        // Exit lobby button
         TextButton exitLobbyButton = new TextButton("Exit Lobby", skin);
         root.add(exitLobbyButton).width(200).height(50).pad(20).row();
-        
+
         exitLobbyButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -75,34 +75,34 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
         client.setSessionMode(GameClient.SessionMode.LOBBY);
         client.addLobbyUpdateListener(this);
         client.connect(ipAddress);
-        game.gameClient = client; // Store client for cleanup
+        game.gameClient = client;
     }
 
     private void transitionToGame(List<String> playerNames) {
-        // Client transitions to GameScreen
-        game.setScreen(new GameScreen(game, false, playerNames)); // Pass the player names
+        // Transition to game screen
+        game.setScreen(new GameScreen(game, false, playerNames));
         dispose();
     }
-    
+
     private void handleExitLobby() {
         // Send exit lobby request to server
         if (client != null) {
             client.sendExitLobbyRequest();
         }
-        
+
         // Disconnect and return to start screen
         if (game.gameClient != null) {
             game.gameClient.dispose();
             game.gameClient = null;
         }
-        
+
         game.setScreen(new com.badlogic.blackjack.StartScreen(game));
         dispose();
     }
 
     @Override
     public void onLobbyUpdate(NetworkPacket.LobbyUpdate update) {
-        // Status updated once connected
+        // Update status when connected
         statusLabel.setText("Connected to Host at " + ipAddress);
         roomNameLabel.setText("Room: " + update.roomName);
         playerCounterLabel.setText("Players: " + update.currentPlayers + "/" + update.maxPlayers);
@@ -122,9 +122,8 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
 
     @Override
     public void onGameStateUpdate(NetworkPacket.GameStateUpdate update) {
-        // The Lobby Screen does not care about game state updates, so we do nothing.
     }
-    
+
     @Override
     public void onExitMatch(NetworkPacket.ExitMatchResponse response) {
         // If host exited or match ended, return to start screen
@@ -132,7 +131,7 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
         game.setScreen(new com.badlogic.blackjack.StartScreen(game));
         dispose();
     }
-    
+
     @Override
     public void onRestartMatch(NetworkPacket.RestartMatchResponse response) {
         // Restart match - transition to game screen with the same players
@@ -140,28 +139,28 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
         game.setScreen(new com.badlogic.blackjack.GameScreen(game, false, response.playerNames));
         dispose();
     }
-    
+
     @Override
     public void onExitLobby(NetworkPacket.ExitLobbyResponse response) {
         Gdx.app.log("ClientLobbyScreen", "Received exit lobby response: hostExited=" + response.hostExited);
-        
+
         // Disconnect and return to start screen
         if (game.gameClient != null) {
             game.gameClient.dispose();
             game.gameClient = null;
         }
-        
+
         game.setScreen(new com.badlogic.blackjack.StartScreen(game));
         dispose();
     }
-    
+
     @Override
     public void onLobbyFull(NetworkPacket.LobbyFullResponse response) {
         Gdx.app.log("ClientLobbyScreen", "Lobby is full - " + response.message);
-        
-        // Show message and return to start screen
+
+        // If lobby is full
         statusLabel.setText("Lobby is full! Returning to start screen...");
-        
+
         // Disconnect after a short delay
         Gdx.app.postRunnable(() -> {
             if (game.gameClient != null) {
@@ -201,6 +200,5 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
     @Override
     public void dispose() {
         stage.dispose();
-        // Client disposal is handled in Main.dispose() or when transitioning
     }
 }

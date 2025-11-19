@@ -15,7 +15,6 @@ public class ECS {
     private final Assets assets; // Store the assets manager
     private static final float CARD_SCALE = 2.0f;
 
-    // Constructor now accepts Assets
     public ECS(Assets assets) {
         this.assets = assets;
         entityManager = new EntityManager();
@@ -23,8 +22,7 @@ public class ECS {
         g = new Get();
     }
 
-    // --- FACADE METHOD ---
-    // This translates the game-specific request into generic ECS actions
+    // Translate game-specific request into generic ECS actions
     public void createBoardEntity(int width, int height) {
         Entity board = entityManager.createEntity("board");
         board.addComponent(new CTransform(new Vector2(g.world_dimensions.x/2, g.world_dimensions.y/2), new Vector2(width, height)));
@@ -35,7 +33,7 @@ public class ECS {
         Entity card = entityManager.createEntity("card");
         Vector2 cardSize = new Vector2(assets.cardWidth * CARD_SCALE, assets.cardHeight * CARD_SCALE);
         card.addComponent(new CTransform(new Vector2(g.position.get("DECK")), cardSize));
-        card.addComponent(new CSprite(assets.getCardSprite(c.getSuit(),c.getRank()))); // Use the loaded board texture
+        card.addComponent(new CSprite(assets.getCardSprite(c.getSuit(),c.getRank())));
         card.addComponent(new CCard(c.m_id, c.getSuit(), c.getRank()));
 
         return card;
@@ -46,7 +44,7 @@ public class ECS {
         Vector2 cardSize = new Vector2(assets.deck.getWidth()*0.65f, assets.deck.getHeight()*0.65f);
 
         deck.addComponent(new CTransform(new Vector2(g.position.get("DECK")), cardSize));
-        deck.addComponent(new CSprite(assets.deck)); // Use the loaded board texture
+        deck.addComponent(new CSprite(assets.deck));
     }
 
     public void clearCardEntities() {
@@ -66,7 +64,7 @@ public class ECS {
                 }
             }
         }
-        return null; // Or throw an exception if not found
+        return null;
     }
 
     public void update(float delta) {
@@ -74,8 +72,6 @@ public class ECS {
     }
 
     public void render(SpriteBatch spriteBatch) {
-        // We clear the screen in Main.java, so we just need to render here.
-        // spriteBatch.begin() and end() are now handled inside RenderSystem for better encapsulation.
         renderSystem.render(entityManager.getEntities(), spriteBatch);
     }
 }

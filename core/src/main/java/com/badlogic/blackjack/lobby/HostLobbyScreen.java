@@ -42,8 +42,8 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         this.game = game;
         this.roomName = roomName;
         this.maxPlayers = maxPlayers;
-        this.skin = game.assets.skin; // Assuming a skin is available via Main/Assets
-        this.hostPlayerName = hostPlayerName; // INITIALIZE NEW FIELD
+        this.skin = game.assets.skin;
+        this.hostPlayerName = hostPlayerName;
 
         this.stage = new Stage(new ScreenViewport(), game.spriteBatch);
 
@@ -66,11 +66,11 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         root.add(playerCounterLabel).pad(10).row();
         root.add(new ScrollPane(playersListLabel, skin)).expand().fill().pad(20).row();
         root.add(startGameButton).width(200).height(50).pad(20).row();
-        
-        // Add exit lobby button
+
+        // Exit lobby button
         TextButton exitLobbyButton = new TextButton("Exit Lobby", skin);
         root.add(exitLobbyButton).width(200).height(50).pad(20).row();
-        
+
         exitLobbyButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -78,13 +78,13 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
             }
         });
 
-        // Host can't start if they are the only one (optional rule)
+        // Disable start button if host is the only player
         startGameButton.setDisabled(true);
 
         // --- Networking Setup ---
         try {
-            // 1. Start the Server and STORE IT IN MAIN
-            game.gameServer = new GameServer(roomName, maxPlayers); // CREATE AND STORE
+            // 1. Start the Server
+            game.gameServer = new GameServer(roomName, maxPlayers);
             game.gameServer.start();
 
             // Display Host IP
@@ -94,13 +94,13 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
             client = new GameClient(hostPlayerName);
             client.setSessionMode(GameClient.SessionMode.LOBBY);
             client.addLobbyUpdateListener(this);
+
             // Host connects to their own local server
             client.connect("127.0.0.1");
-            game.gameClient = client; // Store client for cleanup
+            game.gameClient = client;
 
         } catch (IOException e) {
             Gdx.app.error("HostLobbyScreen", "Failed to start server/client: " + e.getMessage());
-            // Transition back to StartScreen on failure
             game.setScreen(new com.badlogic.blackjack.StartScreen(game));
         }
 
@@ -109,13 +109,12 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
             public void changed(ChangeEvent event, Actor actor) {
                 // Broadcast the START_GAME packet to all clients
                 game.gameServer.sendStartGame();
-                // Host immediately transitions to the GameScreen
-                transitionToGame(maxPlayers, connectedPlayerNames); // Modified call
+                // Transition to game screen
+                transitionToGame(maxPlayers, connectedPlayerNames);
             }
         });
     }
 
-    // Quick and dirty way to get a local IP. For real deployment, this is harder.
     private String getLocalIP() {
         try {
             return java.net.InetAddress.getLocalHost().getHostAddress();
@@ -125,28 +124,22 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
     }
 
     private void transitionToGame(int finalMaxPlayers, List<String> playerNames) {
-        // The server (game.gameServer) now remains active.
 
-        // Pass the player names and isHost=true flag
+        // Transition to game screen and pass the player names and isHost=true flag
         game.setScreen(new GameScreen(game, true, playerNames));
         dispose();
     }
-    
+
     private void handleExitLobby() {
-        // Send exit lobby request to server (host's own server)
-        // The server will process it and send ExitLobbyResponse
-        // We'll handle cleanup in onExitLobby() when we receive the response
+        // If host exits lobby, all clients need to exit too.
         if (client != null) {
             client.sendExitLobbyRequest();
         }
-        // Don't dispose here - wait for server response to avoid race condition
     }
 
     @Override
     public void onLobbyUpdate(NetworkPacket.LobbyUpdate update) {
-        // --- MODIFIED: Store the player names ---
         this.connectedPlayerNames = update.playerNames;
-        // --- END MODIFIED ---
 
         // Update player counter
         playerCounterLabel.setText("Players: " + update.currentPlayers + "/" + update.maxPlayers);
@@ -158,23 +151,20 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         }
         playersListLabel.setText(sb.toString());
 
-        // Enable start button if enough players (e.g., more than 1)
+        // Enable start button if enough players (more than 1)
         startGameButton.setDisabled(update.currentPlayers < 2);
     }
 
-    // --- NEW LISTENER METHOD ---
     @Override
     public void onGameStateUpdate(NetworkPacket.GameStateUpdate update) {
-        // Not used in the lobby screen, but required by the interface
     }
-    // --- END NEW LISTENER METHOD ---
 
     @Override
     public void onGameStart(NetworkPacket.StartGame start) {
         // Host client received its own start packet.
         transitionToGame(start.maxPlayers, start.playerNames);
     }
-    
+
     @Override
     public void onExitMatch(NetworkPacket.ExitMatchResponse response) {
         // If match ended, return to start screen
@@ -182,7 +172,7 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         game.setScreen(new com.badlogic.blackjack.StartScreen(game));
         dispose();
     }
-    
+
     @Override
     public void onRestartMatch(NetworkPacket.RestartMatchResponse response) {
         // Restart match - transition to game screen with the same players
@@ -190,34 +180,29 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         game.setScreen(new com.badlogic.blackjack.GameScreen(game, true, response.playerNames));
         dispose();
     }
-    
+
     @Override
     public void onExitLobby(NetworkPacket.ExitLobbyResponse response) {
         Gdx.app.log("HostLobbyScreen", "Received exit lobby response: hostExited=" + response.hostExited);
-        
-        // Remove listener before disposing to prevent issues
+
         if (client != null) {
             client.removeLobbyUpdateListener(this);
         }
-        
-        // Disconnect client first
+
+        // Disconnect clients before closing server
         if (game.gameClient != null) {
             game.gameClient.dispose();
             game.gameClient = null;
         }
-        
-        // Server is already stopping itself in handleExitLobbyRequest
-        // Just clear the reference - don't try to dispose it again
-        // The server.stop() was called asynchronously, so we just null the reference
+
         game.gameServer = null;
-        
+
         game.setScreen(new com.badlogic.blackjack.StartScreen(game));
         dispose();
     }
-    
+
     @Override
     public void onLobbyFull(NetworkPacket.LobbyFullResponse response) {
-        // Not used in HostLobbyScreen (host can't be rejected)
     }
 
     @Override
@@ -248,6 +233,5 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
     @Override
     public void dispose() {
         stage.dispose();
-        // The server is NOT disposed here; it stays running until Main.dispose()
     }
 }

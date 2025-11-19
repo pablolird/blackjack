@@ -7,12 +7,12 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 public class CSprite {
     Sprite m_sprite;
 
-    // This constructor is what we'll use for the board
+    // Constructor for board
     public CSprite(Texture t) {
         this.m_sprite = new Sprite(t);
     }
 
-    // This one can be used for cards later
+    // Constructor for cards
     public CSprite(TextureRegion t) {
         this.m_sprite = new Sprite(t);
     }

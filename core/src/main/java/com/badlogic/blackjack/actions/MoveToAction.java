@@ -24,7 +24,7 @@ public class MoveToAction implements Action {
     @Override
     public boolean update(float delta) {
         if (startPosition == null) {
-            // On the first frame, capture the starting position
+            // On the first frame, save the starting position
             startPosition = transform.m_position.cpy();
         }
 
