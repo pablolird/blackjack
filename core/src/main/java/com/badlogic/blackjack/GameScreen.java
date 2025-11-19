@@ -1,5 +1,6 @@
 package com.badlogic.blackjack;
 
+import com.badlogic.blackjack.GameState;
 import com.badlogic.blackjack.network.GameClient;
 import com.badlogic.blackjack.network.GameServer;
 import com.badlogic.gdx.Gdx;
@@ -97,7 +98,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
         logic.setGameUI(ui);
         ecs.createBoardEntity(Main.WORLD_WIDTH, Main.WORLD_HEIGHT);
         ecs.createDeckEntity();
-        audioManager.playMusic(assets.bgMusic1, 0f);
+        audioManager.playMusic(assets.bgMusic1, 0.3f);
 
         // Set up exit match callback
         game.exitMatchCallback = this::handleExitMatch;
@@ -241,6 +242,8 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
     @Override
     public void dispose() {
+        // Stop music when exiting game screen
+        audioManager.stopMusic();
 
         // Remove listener to prevent duplicate handling of network events
         if (game.gameClient != null) {

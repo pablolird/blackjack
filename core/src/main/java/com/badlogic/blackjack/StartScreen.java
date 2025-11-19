@@ -20,6 +20,7 @@ import com.badlogic.blackjack.lobby.HostLobbyScreen;
 import com.badlogic.blackjack.lobby.ClientLobbyScreen;
 
 public class StartScreen implements Screen {
+    private final Main game;
     private Stage stage;
     private Skin skin;
     private TiledDrawable startBackground;
@@ -282,6 +283,7 @@ public class StartScreen implements Screen {
 
 
     public StartScreen(final Main game) {
+        this.game = game;
         // Tiles declaration
         Texture startTex = new Texture(Gdx.files.internal("pixel/Picture/color_background_91.png"));
         Texture hostTex = new Texture(Gdx.files.internal("pixel/Picture/color_background_6.png"));
@@ -349,6 +351,10 @@ public class StartScreen implements Screen {
 
     @Override
     public void show() {
+        // Stop music when entering menu
+        if (game.assets != null && game.assets.bgMusic1 != null) {
+            game.assets.bgMusic1.stop();
+        }
     }
 
     @Override
