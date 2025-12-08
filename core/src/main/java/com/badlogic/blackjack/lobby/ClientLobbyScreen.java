@@ -15,6 +15,8 @@ import com.badlogic.blackjack.GameScreen;
 import com.badlogic.blackjack.network.GameClient;
 import com.badlogic.blackjack.network.NetworkPacket;
 import com.badlogic.blackjack.network.GameClient.LobbyUpdateListener;
+import com.badlogic.blackjack.audio.AudioManager;
+import com.badlogic.blackjack.audio.SoundType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,10 +33,12 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
     private Label playerCounterLabel;
     private Label playersListLabel;
     private final String playerName;
+    private final AudioManager audioManager;
 
     public ClientLobbyScreen(Main game, String playerName, String ipAddress) {
         this.game = game;
         this.ipAddress = ipAddress;
+        this.audioManager = new AudioManager(game.assets);
         this.skin = game.assets.skin;
         this.stage = new Stage(new ScreenViewport(), game.spriteBatch);
         this.playerName = playerName;
@@ -66,6 +70,7 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
         exitLobbyButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.BUTTON, 1.0f);
                 handleExitLobby();
             }
         });

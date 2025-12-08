@@ -18,6 +18,8 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 
 import com.badlogic.blackjack.lobby.HostLobbyScreen;
 import com.badlogic.blackjack.lobby.ClientLobbyScreen;
+import com.badlogic.blackjack.audio.AudioManager;
+import com.badlogic.blackjack.audio.SoundType;
 
 public class StartScreen implements Screen {
     private final Main game;
@@ -33,6 +35,7 @@ public class StartScreen implements Screen {
     private Table joinTable;
     private TextButtonStyle t1;
     private int depth = 0;
+    private final AudioManager audioManager;
 
     TextButton createButton(String text, Skin skin) {
         TextButton button = new TextButton(text, skin);
@@ -72,6 +75,7 @@ public class StartScreen implements Screen {
         createGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.BUTTON, 1.0f);
                 // SCREEN TRANSITION - LOCAL GAME STARTS IMMEDIATELY
                 game.setScreen(new GameScreen(game, maxPlayers.getSelected()));
                 dispose();
@@ -81,6 +85,7 @@ public class StartScreen implements Screen {
         backButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.BUTTON, 1.0f);
                 localTable.setVisible(false);
                 startTable.setVisible(true);
                 depth = 0;
@@ -123,6 +128,7 @@ public class StartScreen implements Screen {
         backButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.BUTTON, 1.0f);
                 joinTable.setVisible(false);
                 startTable.setVisible(true);
                 depth = 0;
@@ -132,6 +138,7 @@ public class StartScreen implements Screen {
         confirmButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.BUTTON, 1.0f);
                 // Transition to ClientLobbyScreen and start connection attempt
                 String ipAddress = ipAddressField.getText();
                 String playerName = playerNameField.getText();
@@ -178,6 +185,7 @@ public class StartScreen implements Screen {
         localGame.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.BUTTON, 1.0f);
                 startTable.setVisible(false);
                 localTable.setVisible(true);
                 depth=1;
@@ -188,6 +196,7 @@ public class StartScreen implements Screen {
         hostGame.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.BUTTON, 1.0f);
                 startTable.setVisible(false);
                 hostTable.setVisible(true);
                 depth=1;
@@ -197,6 +206,7 @@ public class StartScreen implements Screen {
         joinGame.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.BUTTON, 1.0f);
                 startTable.setVisible(false);
                 joinTable.setVisible(true); // SHOW NEW JOIN TABLE
                 depth=1;
@@ -206,6 +216,7 @@ public class StartScreen implements Screen {
         exitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.BUTTON, 1.0f);
                 // This is the screen transition!
                 Gdx.app.exit();
             }
@@ -259,6 +270,7 @@ public class StartScreen implements Screen {
         backButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.BUTTON, 1.0f);
                 hostTable.setVisible(false);
                 startTable.setVisible(true);
                 depth = 0;
@@ -268,6 +280,7 @@ public class StartScreen implements Screen {
         createGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.BUTTON, 1.0f);
                 String name = roomNameField.getText();
                 int max = maxPlayersSelectBox.getSelected();
                 String hostName = playerNameField.getText();
@@ -284,6 +297,7 @@ public class StartScreen implements Screen {
 
     public StartScreen(final Main game) {
         this.game = game;
+        this.audioManager = new AudioManager(game.assets);
         // Tiles declaration
         Texture startTex = new Texture(Gdx.files.internal("pixel/Picture/color_background_91.png"));
         Texture hostTex = new Texture(Gdx.files.internal("pixel/Picture/color_background_6.png"));

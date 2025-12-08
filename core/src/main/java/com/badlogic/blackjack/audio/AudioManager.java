@@ -22,6 +22,7 @@ public class AudioManager
         soundMap.put(SoundType.BET, assets.betSFX);
         soundMap.put(SoundType.LOCKBET, assets.lockbetSFX);
         soundMap.put(SoundType.STAND, assets.standSFX);
+        soundMap.put(SoundType.BUTTON, assets.buttonSFX);
     }
 
     public void playSound(SoundType type, float volume)

@@ -16,6 +16,8 @@ import com.badlogic.blackjack.network.GameServer;
 import com.badlogic.blackjack.network.GameClient;
 import com.badlogic.blackjack.network.NetworkPacket;
 import com.badlogic.blackjack.network.GameClient.LobbyUpdateListener;
+import com.badlogic.blackjack.audio.AudioManager;
+import com.badlogic.blackjack.audio.SoundType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,6 +31,7 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
     private final String roomName;
     private final int maxPlayers;
     private final String hostPlayerName;
+    private final AudioManager audioManager;
 
     private List<String> connectedPlayerNames = new ArrayList<>();
 
@@ -44,6 +47,7 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         this.maxPlayers = maxPlayers;
         this.skin = game.assets.skin;
         this.hostPlayerName = hostPlayerName;
+        this.audioManager = new AudioManager(game.assets);
 
         this.stage = new Stage(new ScreenViewport(), game.spriteBatch);
 
@@ -74,6 +78,7 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         exitLobbyButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.BUTTON, 1.0f);
                 handleExitLobby();
             }
         });
@@ -107,6 +112,7 @@ public class HostLobbyScreen implements Screen, LobbyUpdateListener {
         startGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                audioManager.playSound(SoundType.BUTTON, 1.0f);
                 // Broadcast the START_GAME packet to all clients
                 game.gameServer.sendStartGame();
                 // Transition to game screen

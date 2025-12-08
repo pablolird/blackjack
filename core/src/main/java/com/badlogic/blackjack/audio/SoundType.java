@@ -5,5 +5,6 @@ public enum SoundType
     CARD_DEAL,
     BET,
     LOCKBET,
-    STAND
+    STAND,
+    BUTTON
 }
