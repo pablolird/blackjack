@@ -242,8 +242,10 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
     @Override
     public void dispose() {
-        // Stop music when exiting game screen
-        audioManager.stopMusic();
+        // Stop music when exiting game screen unless we're restarting and handing off to a new screen
+        if (!isRestarting) {
+            audioManager.stopMusic();
+        }
 
         // Remove listener to prevent duplicate handling of network events
         if (game.gameClient != null) {

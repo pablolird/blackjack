@@ -47,6 +47,7 @@ public class UI {
     private Main game;
     private GameClient gameClient;
     Player currentPlayer;
+    private int initialPlayerCount;
 
     private ArrayList<GameButton> bettingButtons;
     private ArrayList<GameButton> mainButtons;
@@ -172,6 +173,7 @@ public class UI {
         this.audioManager = audioManager;
         this.stage = new Stage(vp, sb);
         this.gameClient = game.gameClient;
+        this.initialPlayerCount = blackjackLogic.getPlayersList().size();
 
         this.bettingButtons = new ArrayList<>();
         this.mainButtons = new ArrayList<>();
@@ -307,7 +309,9 @@ public class UI {
 
         // 6. Build the Game Over Menu for Local Games (exit only, no restart)
         gameOverLocalMenu = new WindowMenu("Game Over",skin,stage);
+        TextButton restartLocalButton = new TextButton("Restart", startGameSkin);
         TextButton exitLocalButton = new TextButton("Exit", startGameSkin);
+        gameOverLocalMenu.add(restartLocalButton);
         gameOverLocalMenu.add(exitLocalButton);
         stage.addActor(gameOverLocalMenu.window);
 
@@ -316,6 +320,14 @@ public class UI {
             public void changed(ChangeEvent event, Actor actor) {
                 // Local game - just return to start screen
                 game.setScreen(new StartScreen(game));
+                dispose();
+            }
+        });
+
+        restartLocalButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new GameScreen(game, initialPlayerCount));
                 dispose();
             }
         });
@@ -339,8 +351,7 @@ public class UI {
                 if (gameClient == null) {
                     // Local game - restart directly
                     Gdx.app.log("UI", "Restarting local game");
-                    int numPlayers = blackjackLogic.getPlayersList().size();
-                    game.setScreen(new GameScreen(game, numPlayers));
+                    game.setScreen(new GameScreen(game, initialPlayerCount));
                     dispose(); // Dispose this screen
                 } else if (game.restartMatchCallback != null) {
                     // Multiplayer - use callback
