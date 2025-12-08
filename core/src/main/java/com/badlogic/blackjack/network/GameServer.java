@@ -4,13 +4,11 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.blackjack.BlackjackLogic;
-import com.badlogic.blackjack.GameStateListener;
-import com.badlogic.blackjack.GameState;
-import com.badlogic.blackjack.Player;
-import com.badlogic.blackjack.Card;
-import com.badlogic.blackjack.Dealer;
-import com.badlogic.blackjack.Sequencer;
+import com.badlogic.blackjack.game.BlackjackLogic;
+import com.badlogic.blackjack.game.GameStateListener;
+import com.badlogic.blackjack.game.GameState;
+import com.badlogic.blackjack.game.Player;
+import com.badlogic.blackjack.game.Card;
 
 import java.io.IOException;
 import java.util.ArrayList;

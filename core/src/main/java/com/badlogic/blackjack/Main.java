@@ -1,7 +1,7 @@
 package com.badlogic.blackjack;
 
+import com.badlogic.blackjack.assets.Assets;
 import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.blackjack.network.GameClient;
 import com.badlogic.blackjack.network.GameServer; // NEW IMPORT
