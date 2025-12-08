@@ -1,4 +1,4 @@
-package com.badlogic.blackjack;
+package com.badlogic.blackjack.GameUI;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -10,7 +10,7 @@ public class GameButton {
     Color disabledColor = Color.GRAY;
     boolean isDisabled;
 
-    boolean isDisabled() {
+    public boolean isDisabled() {
         return isDisabled;
     }
 

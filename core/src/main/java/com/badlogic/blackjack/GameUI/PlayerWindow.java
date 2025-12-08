@@ -1,11 +1,11 @@
-package com.badlogic.blackjack;
+package com.badlogic.blackjack.GameUI;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 
-public class PlayerWindow extends WindowMenu{
+public class PlayerWindow extends WindowMenu {
     Vector2 g_pos;
     Vector2 g_shift;
 
@@ -32,7 +32,7 @@ public class PlayerWindow extends WindowMenu{
         return new Vector2(g_pos.x - (window.getWidth() / 2f) + g_shift.x, g_pos.y - (window.getHeight() / 2f) + g_shift.y);
     }
 
-    void add(Image i) {
+    public void add(Image i) {
         t.add(i).padRight(10f).padBottom(0).width(30f).height(30f);
     }
 

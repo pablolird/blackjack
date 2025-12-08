@@ -1,18 +1,17 @@
-package com.badlogic.blackjack;
+package com.badlogic.blackjack.GameUI;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
-import com.badlogic.gdx.utils.Align;
 
 public class PlayerUI {
-    Window playerWindow;
-    Label playerName;
-    Label playerScore;
-    Label playerBalance;
+    public Window playerWindow;
+    public Label playerName;
+    public Label playerScore;
+    public Label playerBalance;
 
-    PlayerUI(Window pW, Label playerName, int score, int balance, Skin skin) {
+    public PlayerUI(Window pW, Label playerName, int score, int balance, Skin skin) {
         this.playerWindow = pW;
         this.playerName = playerName;
         playerScore = new Label(Integer.toString(score), skin);
