@@ -1,6 +1,6 @@
 package com.badlogic.blackjack.audio;
 
-import com.badlogic.blackjack.Assets;
+import com.badlogic.blackjack.assets.Assets;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import java.util.Map;

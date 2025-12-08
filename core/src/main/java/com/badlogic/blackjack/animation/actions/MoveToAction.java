@@ -1,0 +1,45 @@
+package com.badlogic.blackjack.animation.actions;
+
+import com.badlogic.blackjack.ecs.components.CTransform;
+import com.badlogic.blackjack.ecs.Entity;
+import com.badlogic.gdx.math.Vector2;
+
+public class MoveToAction implements Action {
+    private final Vector2 targetPosition;
+    private final float duration;
+    private float elapsedTime = 0f;
+
+    private final CTransform transform;
+    private Vector2 startPosition;
+    private final float targetRotation;
+
+    public MoveToAction(Entity entity, Vector2 targetPosition, float targetRotation ,float duration) {
+        this.targetPosition = targetPosition;
+        this.targetRotation = targetRotation;
+        this.duration = duration > 0 ? duration : 0.0001f; // Avoid division by zero
+        this.transform = (CTransform) entity.getComponent(CTransform.class);
+        float startRotation = transform.m_rotation;
+    }
+
+    @Override
+    public boolean update(float delta) {
+        if (startPosition == null) {
+            // On the first frame, save the starting position
+            startPosition = transform.m_position.cpy();
+        }
+
+        elapsedTime += delta;
+
+        // Calculate how far along the animation is (from 0.0 to 1.0)
+        float progress = Math.min(1f, elapsedTime / duration);
+
+        // Linearly interpolate (lerp) the position based on progress
+        transform.m_position.set(startPosition).lerp(targetPosition, progress);
+
+        // Linearly interpolate (lerp) the rotation based on progress
+        transform.m_rotation = targetRotation * progress;
+
+        // The action is done when progress is 1.0 or more
+        return progress >= 1f;
+    }
+}
