@@ -146,7 +146,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     private static List<String> createLocalPlayerNames(int n) {
         List<String> names = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            names.add("P" + (i+1));
+            names.add("PLAYER" + (i + 1));
         }
         return names;
     }

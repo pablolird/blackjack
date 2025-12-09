@@ -6,7 +6,7 @@ import com.badlogic.blackjack.audio.AudioManager;
 import com.badlogic.blackjack.audio.SoundType;
 import com.badlogic.blackjack.game.BlackjackLogic;
 import com.badlogic.blackjack.game.Dealer;
-import com.badlogic.blackjack.game.Get;
+import com.badlogic.blackjack.assets.Get;
 import com.badlogic.blackjack.game.Player;
 import com.badlogic.blackjack.ui.components.*;
 import com.badlogic.gdx.Gdx;
@@ -418,7 +418,7 @@ public class UI {
             String playerKey = "PLAYER" + (i + 1) + "_CARD";
             Player p = players.get(i);
 
-            PlayerWindow w2 = new PlayerWindow("PLAYER" + (i + 1),
+            PlayerWindow w2 = new PlayerWindow(p.getName(),
                 skin,
                 stage,
                 g.position.get(playerKey),

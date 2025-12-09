@@ -62,7 +62,7 @@ public class BlackjackLogic {
         // Create dummy names for local game initialization
         List<String> dummyNames = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            dummyNames.add("P" + (i+1));
+            dummyNames.add("PLAYER" + (i + 1));
         }
         this.numPlayers = n;
         this.sequencer = sequencer;

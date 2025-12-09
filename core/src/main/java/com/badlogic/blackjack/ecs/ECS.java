@@ -6,7 +6,7 @@ import com.badlogic.blackjack.ecs.components.CTransform;
 import com.badlogic.blackjack.ecs.systems.RenderSystem;
 import com.badlogic.blackjack.assets.Assets;
 import com.badlogic.blackjack.game.Card;
-import com.badlogic.blackjack.game.Get;
+import com.badlogic.blackjack.assets.Get;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 

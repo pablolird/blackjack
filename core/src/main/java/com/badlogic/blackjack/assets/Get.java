@@ -1,4 +1,4 @@
-package com.badlogic.blackjack.game;
+package com.badlogic.blackjack.assets;
 
 import com.badlogic.gdx.math.Vector2;
 

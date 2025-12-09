@@ -52,7 +52,7 @@ public class GameServer implements GameStateListener {
         server.getKryo().register(NetworkPacket.RegisterPlayer.class);
         server.getKryo().register(NetworkPacket.LobbyUpdate.class);
         server.getKryo().register(NetworkPacket.StartGame.class);
-        server.getKryo().register(NetworkPacket.PlayerActionType.class); // Register the enum
+        server.getKryo().register(NetworkPacket.PlayerActionType.class);
         server.getKryo().register(NetworkPacket.PlayerAction.class);
         server.getKryo().register(NetworkPacket.ExitMatchRequest.class);
         server.getKryo().register(NetworkPacket.ExitMatchResponse.class);
@@ -296,7 +296,7 @@ public class GameServer implements GameStateListener {
         if (currentPhase == GameState.PLAYER_TURN || currentPhase == GameState.BETTING) {
             if (gameLogic.getCurrentPlayerIndex() < gameLogic.getPlayersList().size()) {
                 Player currentPlayer = gameLogic.getPlayersList().get(gameLogic.getCurrentPlayerIndex());
-                update.currentPlayerName = currentPlayer.getName(); // This will work now
+                update.currentPlayerName = currentPlayer.getName();
                 update.currentPlayerIndex = gameLogic.getCurrentPlayerIndex();
             }
         } else {

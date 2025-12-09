@@ -24,7 +24,7 @@ public class PlayerWindow extends WindowMenu {
     @Override
     public void pack() {
         window.pack();
-        Vector2 pos = recalculateCenter(); // Calls PlayerWindow's logic
+        Vector2 pos = recalculateCenter();
         window.setPosition(pos.x, pos.y);
     }
 

@@ -8,7 +8,7 @@ import com.badlogic.blackjack.audio.AudioManager;
 import com.badlogic.blackjack.audio.SoundType;
 import com.badlogic.blackjack.game.Card;
 import com.badlogic.blackjack.game.Dealer;
-import com.badlogic.blackjack.game.Get;
+import com.badlogic.blackjack.assets.Get;
 import com.badlogic.blackjack.game.Player;
 import com.badlogic.gdx.math.Vector2;
 
