@@ -1,5 +1,6 @@
 package com.badlogic.blackjack.ecs.components;
 
+// Component for storing and manipulating cards
 public class CCard {
     public String m_suit;
     public String m_rank;

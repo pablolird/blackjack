@@ -2,6 +2,7 @@ package com.badlogic.blackjack.ecs.components;
 
 import com.badlogic.gdx.math.Vector2;
 
+// Component for storing and manipulating position
 public class CTransform {
     public Vector2 m_position;
     public Vector2 m_prevPosition;

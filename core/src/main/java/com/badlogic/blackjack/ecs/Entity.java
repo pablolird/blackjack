@@ -2,6 +2,7 @@ package com.badlogic.blackjack.ecs;
 
 import java.util.HashMap;
 
+// Entity class which assigns entity components (such as to the cards)
 public class Entity {
     int m_id;
     public String m_tag;

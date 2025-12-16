@@ -2,6 +2,7 @@ package com.badlogic.blackjack.ecs.components;
 
 import com.badlogic.gdx.math.Vector2;
 
+// Component for storing and manipulating animation
 public class CAnimation {
     public Vector2 m_targetPosition;
     public float m_speed;

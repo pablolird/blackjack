@@ -21,6 +21,7 @@ import com.badlogic.blackjack.lobby.ClientLobbyScreen;
 import com.badlogic.blackjack.audio.AudioManager;
 import com.badlogic.blackjack.audio.SoundType;
 
+// Start screen, handles the start screen for the game
 public class StartScreen implements Screen {
     private final Main game;
     private Stage stage;
@@ -34,7 +35,7 @@ public class StartScreen implements Screen {
     private Table localTable;
     private Table joinTable;
     private TextButtonStyle t1;
-    private int depth = 0;
+    private int depth = 0; // Tracks how deep into submenus we are for ESC handling
     private final AudioManager audioManager;
 
     TextButton createButton(String text, Skin skin) {
@@ -208,7 +209,7 @@ public class StartScreen implements Screen {
             public void changed(ChangeEvent event, Actor actor) {
                 audioManager.playSound(SoundType.BUTTON, 1.0f);
                 startTable.setVisible(false);
-                joinTable.setVisible(true); // SHOW NEW JOIN TABLE
+                joinTable.setVisible(true); // Show join table
                 depth=1;
             }
         });
@@ -262,7 +263,7 @@ public class StartScreen implements Screen {
         TextButton backButton = createButton("Back", skin);
         buttonTable.add(backButton).padRight(10f).padTop(50f);
 
-        TextButton createGameButton = createButton("Create Game", skin); // RENAMED FROM refreshButton
+        TextButton createGameButton = createButton("Create Game", skin);
         buttonTable.add(createGameButton).padLeft(10f).padTop(50f);
 
         hostTable.add(buttonTable).padTop(20f).colspan(2);
@@ -348,6 +349,7 @@ public class StartScreen implements Screen {
             public boolean keyDown(int keycode) {
                 if (keycode == Input.Keys.ESCAPE) {
                     if (depth == 1) {
+                        // Back out of submenus before exiting the app
                         hostTable.setVisible(false);
                         localTable.setVisible(false);
                         joinTable.setVisible(false);

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+// Host lobby screen, implements Screen and LobbyUpdateListener
 public class HostLobbyScreen implements Screen, LobbyUpdateListener {
     private final Main game;
     private final Stage stage;

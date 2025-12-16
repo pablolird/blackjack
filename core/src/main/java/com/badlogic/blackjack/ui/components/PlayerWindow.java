@@ -5,6 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 
+// Player window, displays player information
 public class PlayerWindow extends WindowMenu {
     Vector2 g_pos;
     Vector2 g_shift;
@@ -29,6 +30,7 @@ public class PlayerWindow extends WindowMenu {
     }
 
     public Vector2 recalculateCenter() {
+        // Keep window centered on its anchor with an optional positional shift
         return new Vector2(g_pos.x - (window.getWidth() / 2f) + g_shift.x, g_pos.y - (window.getHeight() / 2f) + g_shift.y);
     }
 

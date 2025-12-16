@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 
+// Window menu, displays a window with a title and content
 public class WindowMenu {
     public Window window;
     Vector2 stage;
@@ -18,6 +19,7 @@ public class WindowMenu {
         window = new Window(title, skin);
         stage = new Vector2(s.getWidth(), s.getHeight());
 
+        // Size/position set after content is added
         window.getTitleTable().padTop(30f);
         window.setZIndex(20);
         window.pad(20);

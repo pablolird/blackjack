@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 
+// Game button, extends from TextButton
 public class GameButton {
     public TextButton button;
     Color color;
@@ -14,6 +15,7 @@ public class GameButton {
         return isDisabled;
     }
 
+    // Constructor
     public GameButton(Skin skin, String text, Color c) {
         isDisabled = true;
         button = new TextButton(text, skin);

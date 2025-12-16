@@ -34,7 +34,9 @@ public class Assets {
         return cardMap.get(rank + "_of_" + suit);
     }
 
+    // ASSET LOADING
     public void loadFromFile() {
+        // Textures and skin are loaded once at startup and shared across screens
         board = new Texture(Gdx.files.internal("board.png"));
         deck = new Texture(Gdx.files.internal("deck.png"));
 

@@ -2,7 +2,7 @@ package com.badlogic.blackjack.game;
 
 import java.util.ArrayList;
 
-
+// Dealer class
 public class Dealer {
     public ArrayList<Card> m_currentCards = new ArrayList<>();
 
@@ -21,6 +21,7 @@ public class Dealer {
         this.m_currentCards.clear();
     }
 
+    // Check for a specific card in hand using the card id
     public boolean hasCard(int cardId) {
         for (Card c : m_currentCards) {
             if (c.m_id == cardId) {
@@ -30,6 +31,7 @@ public class Dealer {
         return false;
     }
 
+    // Calculates value of all cards in hand, also applies conditional ace logic
     public int totalValue() {
         int totalValue = 0;
         int aceCount = 0;

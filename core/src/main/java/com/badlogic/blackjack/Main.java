@@ -4,11 +4,10 @@ import com.badlogic.blackjack.assets.Assets;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.blackjack.network.GameClient;
-import com.badlogic.blackjack.network.GameServer; // NEW IMPORT
+import com.badlogic.blackjack.network.GameServer;
 
 /**
  * Main game class that manages screens.
- * Changed from ApplicationListener to extend Game.
  */
 public class Main extends Game {
     public static final int WORLD_WIDTH = 960;

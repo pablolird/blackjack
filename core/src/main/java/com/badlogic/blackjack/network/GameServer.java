@@ -19,7 +19,9 @@ import java.util.List;
 import static com.badlogic.blackjack.Main.TCP_PORT;
 import static com.badlogic.blackjack.Main.UDP_PORT;
 
+// Game server, handles server-side network communication
 public class GameServer implements GameStateListener {
+    // Server instance
     private final Server server;
     private final String roomName;
     private final int maxPlayers;
@@ -40,6 +42,7 @@ public class GameServer implements GameStateListener {
         addListeners();
     }
 
+    // Register packets
     private void registerPackets() {
 
         server.getKryo().register(ArrayList.class);
@@ -64,6 +67,7 @@ public class GameServer implements GameStateListener {
         server.getKryo().register(NetworkPacket.GameStateUpdate.class);
     }
 
+    // Add listeners
     private void addListeners() {
         server.addListener(new Listener() {
             @Override
@@ -77,7 +81,7 @@ public class GameServer implements GameStateListener {
                     NetworkPacket.RegisterPlayer packet = (NetworkPacket.RegisterPlayer) object;
                     // Check if lobby is full
                     if (connectedPlayers.size() < maxPlayers) {
-                        // Check for duplicate names and modify if necessary (need to update this logic, band-aid fix)
+                        // Ensure names are unique on the server to avoid collisions
                         String finalName = ensureUniqueName(packet.name);
 
                         connectedPlayers.put(connection.getID(), finalName);
@@ -185,6 +189,7 @@ public class GameServer implements GameStateListener {
         Gdx.app.log("GameServer", "Server started on port: " + TCP_PORT);
     }
 
+    // Send a lobby update to all connected players
     public void sendLobbyUpdate() {
         NetworkPacket.LobbyUpdate update = new NetworkPacket.LobbyUpdate();
         update.roomName = this.roomName;
@@ -196,6 +201,7 @@ public class GameServer implements GameStateListener {
         server.sendToAllTCP(update);
     }
 
+    // Send a start game packet to all connected players
     public void sendStartGame() {
         NetworkPacket.StartGame start = new NetworkPacket.StartGame();
         start.maxPlayers = this.maxPlayers;
@@ -283,6 +289,7 @@ public class GameServer implements GameStateListener {
         Gdx.app.log("GameServer", "Rebuilt player index map: " + playerNameToIndex);
     }
 
+    // Send a game state update to all connected players
     public void sendGameStateUpdate() {
         if (gameLogic == null) return;
 
@@ -401,7 +408,7 @@ public class GameServer implements GameStateListener {
 
     // Adds a hyphen to duplicate player names when joining lobby
     // Necessary due to the fact that the server uses player name as the ID to identify each player
-    // Should probably be changed later.
+    // (Need to implement a better workaround later, not an emergency though)
     private String ensureUniqueName(String requestedName) {
         String finalName = requestedName;
 

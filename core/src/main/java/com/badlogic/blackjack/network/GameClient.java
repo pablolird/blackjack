@@ -16,7 +16,9 @@ import java.util.concurrent.TimeUnit;
 import static com.badlogic.blackjack.Main.TCP_PORT;
 import static com.badlogic.blackjack.Main.UDP_PORT;
 
+// Game client, handles client-side network communication
 public class GameClient {
+    // Session modes for client-side state management
     public enum SessionMode {
         NONE,
         LOBBY,
@@ -30,6 +32,7 @@ public class GameClient {
     private SessionMode sessionMode = SessionMode.NONE;
     private boolean exitRequested = false;
 
+    // Interface for handling lobby updates
     public interface LobbyUpdateListener {
         void onLobbyUpdate(NetworkPacket.LobbyUpdate update);
         void onGameStart(NetworkPacket.StartGame start);
@@ -135,14 +138,17 @@ public class GameClient {
         });
     }
 
+    // Add a listener for lobby updates
     public void addLobbyUpdateListener(LobbyUpdateListener listener) {
         listeners.add(listener);
     }
 
+    // Remove a listener for lobby updates
     public void removeLobbyUpdateListener(LobbyUpdateListener listener) {
         listeners.removeValue(listener, true);
     }
 
+    // Send an action to the server
     public void sendAction(NetworkPacket.PlayerActionType type, int amount) {
         NetworkPacket.PlayerAction action = new NetworkPacket.PlayerAction();
         action.action = type;
@@ -154,6 +160,7 @@ public class GameClient {
         sendAction(type, 0);
     }
 
+    // Send an exit match request to the server
     public void sendExitMatchRequest() {
         exitRequested = true;
         if (!client.isConnected()) {
@@ -165,12 +172,14 @@ public class GameClient {
         Gdx.app.log("GameClient", "Sent exit match request");
     }
 
+    // Send a restart match request to the server
     public void sendRestartMatchRequest() {
         NetworkPacket.RestartMatchRequest request = new NetworkPacket.RestartMatchRequest();
         client.sendTCP(request);
         Gdx.app.log("GameClient", "Sent restart match request");
     }
 
+    // Send an exit lobby request to the server
     public void sendExitLobbyRequest(String playerName) {
         exitRequested = true;
         if (!client.isConnected()) {
@@ -182,6 +191,7 @@ public class GameClient {
         Gdx.app.log("GameClient", "Sent exit lobby request");
     }
 
+    // Send an exit lobby request to the server
     public void sendExitLobbyRequest() {
         sendExitLobbyRequest(this.playerName);
     }
@@ -216,6 +226,7 @@ public class GameClient {
             }
         }
 
+        // Ensure the connect attempt future is cancelled so threads do not leak
         if (connectionFuture != null && !connectionFuture.isDone()) {
             connectionFuture.cancel(true);
         }

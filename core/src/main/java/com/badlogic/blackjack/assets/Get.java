@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 
 import java.util.HashMap;
 
+// Getter class, mostly for screen positions
 public class Get {
     public HashMap<String, Vector2> position;
     public HashMap<String, Float> rotation;
@@ -15,6 +16,7 @@ public class Get {
         world_dimensions = new Vector2(960, 540);
 
         position = new HashMap<>();
+        // Fixed anchor points for card/dealer placement on screen
         position.put("DECK", new Vector2(480, 270));
         position.put("DEALER_CARD", new Vector2(480, 330));
         position.put("PLAYER1_CARD", new Vector2(360, 330));

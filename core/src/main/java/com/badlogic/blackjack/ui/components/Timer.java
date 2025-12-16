@@ -5,6 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 
+// Timer, displays the remaining time for each player turn
 public class Timer {
     float paddingTop = 8f;
     Vector2 stage;
@@ -30,6 +31,7 @@ public class Timer {
     }
 
     private void updateTextPosition() {
+        // Center horizontally and pin near the top of the viewport
         float pos_x = (stage.x-(timerLabel.getWidth()*timerLabel.getFontScaleX()))/2f;
         float pos_y = (stage.y-(timerLabel.getHeight()*timerLabel.getFontScaleY()))-paddingTop;
         timerLabel.setPosition(pos_x,pos_y);

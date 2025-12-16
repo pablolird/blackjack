@@ -17,6 +17,7 @@ public class PlayerUI {
         playerScore = new Label(Integer.toString(score), skin);
         playerBalance = new Label(Integer.toString(balance), skin);
 
+         // Smaller font + themed colors
         playerScore.setFontScale(0.4f);
         playerScore.setColor(255/255f, 230/255f, 156/255f, 1);
 

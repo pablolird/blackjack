@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-
+// UI class, handles the UI for the game
 public class UI {
     private Stage stage;
     private Skin skin;
@@ -394,6 +394,7 @@ public class UI {
 
     // --- BUILD LAYOUT ---
     public void buildLayout(List<Player> players) {
+        // Initial window creation; card positioning is keyed by fixed PLAYER slots
         // DEALER
         PlayerWindow w = new PlayerWindow("DEALER",
             skin,

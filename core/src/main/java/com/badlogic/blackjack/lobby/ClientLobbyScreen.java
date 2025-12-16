@@ -101,6 +101,7 @@ public class ClientLobbyScreen implements Screen, LobbyUpdateListener {
             game.gameClient = null;
         }
 
+        // Fall back to the main menu once network is cleaned up
         game.setScreen(new com.badlogic.blackjack.StartScreen(game));
         dispose();
     }

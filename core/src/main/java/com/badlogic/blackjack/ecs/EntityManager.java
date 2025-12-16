@@ -3,6 +3,7 @@ package com.badlogic.blackjack.ecs;
 import java.util.ArrayList;
 import java.util.List;
 
+// Class to manage all exiting entities
 public class EntityManager {
     private final List<Entity> m_entities = new ArrayList<>();
     public List<List<Entity>> m_playerCardsList = new ArrayList<>();

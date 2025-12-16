@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Vector2;
 
 import java.util.List;
 
+// Sprite renderization
 public class RenderSystem {
     public void render(List<Entity> entities, SpriteBatch spriteBatch) {
         for (Entity e : entities) {
@@ -29,6 +30,7 @@ public class RenderSystem {
                 sprite.draw(spriteBatch);
             }
         }
+        // Draw the deck last to keep it above the board/background
         Entity e = entities.get(1);
         CSprite spriteComponent = (CSprite) e.getComponent(CSprite.class);
         CTransform transformComponent = (CTransform) e.getComponent(CTransform.class);

@@ -155,6 +155,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
     public void render(float delta) {
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            // Toggle pause so the escape key always surfaces a safe exit
             ui.togglePauseMenu();
         }
 
@@ -282,10 +283,12 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
     @Override
     public void onLobbyUpdate(NetworkPacket.LobbyUpdate update) {
+        // Game start should not occur while already in a GameScreen instance
     }
 
     @Override
     public void onGameStart(NetworkPacket.StartGame start) {
+        // Game start should not occur while already in a GameScreen instance
     }
 
     @Override
@@ -336,6 +339,7 @@ public class GameScreen implements Screen, LobbyUpdateListener {
 
     @Override
     public void onLobbyFull(NetworkPacket.LobbyFullResponse response) {
+        // Lobby full notifications are irrelevant after the game starts
     }
 
     @Override

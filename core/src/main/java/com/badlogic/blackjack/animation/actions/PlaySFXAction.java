@@ -3,6 +3,7 @@ package com.badlogic.blackjack.animation.actions;
 import com.badlogic.blackjack.audio.AudioManager;
 import com.badlogic.blackjack.audio.SoundType;
 
+// Sound effect action for synchronization with other actions such as card dealing
 public class PlaySFXAction implements Action
 {
     private final AudioManager audioManager;

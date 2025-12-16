@@ -18,6 +18,7 @@ public class BlackjackLogic {
     UI gameUI;
     private int nextPlayerId = 0;
     private boolean betsResolved = false;
+    // Delays are used to give clients time to show animations before the next transition.
     private float resolvingBetsDelay = 0f;
     private static final float RESOLVING_BETS_DELAY_TIME = 2.0f; // 2-second delay to view results
     private float cardReturnAnimationDelay = 0f;
@@ -135,7 +136,7 @@ public class BlackjackLogic {
     }
 
     public void nextPlayer() {
-        // Used after HIT/STAND
+        // Used after HIT/STAND to advance turn order
         if (current_playerIndex==playersList.size()-1) {
             // Last player finished, transition to dealer turn with delay
             gameState = GameState.DEALER_TURN;
@@ -334,6 +335,7 @@ public class BlackjackLogic {
     public void update(float delta) {
         switch (gameState) {
             case STARTING:
+                // Reset round state and rebuild table before entering betting
                 deck.reset();
                 playersList.removeIf(p -> !p.isActive());
                 if(gameUI != null) gameUI.rebuildLayout(playersList, dealer);
@@ -424,6 +426,7 @@ public class BlackjackLogic {
                 }
                 break;
             case DEALING_PLAYERS: {
+                // Hand out two opening cards to each active player
                 if(gameUI != null) gameUI.showPlayerActionPanel(false);
 
                 if (sequencer != null && sequencer.isBusy()) {
@@ -517,6 +520,7 @@ public class BlackjackLogic {
                 break;
             }
             case PLAYER_TURN:
+                // Keep players moving if their state is already resolved
                 if (autoAdvanceIfCurrentPlayerResolved()) {
                     break;
                 }

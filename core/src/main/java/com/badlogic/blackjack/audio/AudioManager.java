@@ -6,6 +6,8 @@ import com.badlogic.gdx.audio.Sound;
 import java.util.Map;
 import java.util.HashMap;
 
+// Class for managing all in game audio. Functionality to manage master volume is implemented
+// although an interface to modify this in game has not yet been implemented :(
 public class AudioManager
 {
     private final Assets assets;
@@ -27,12 +29,12 @@ public class AudioManager
 
     public void playSound(SoundType type, float volume)
     {
+        // Sounds are scaled by a master volume to allow future in-game sliders
         Sound soundToPlay = soundMap.get(type);
         if (soundToPlay != null)
         {
             soundToPlay.play(masterSoundVolume * volume);
         }
-
     }
 
     public void playMusic(Music music, float volume)

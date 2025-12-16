@@ -1,6 +1,7 @@
 package com.badlogic.blackjack.game;
-// Player class
+// Player class, extends from Dealer class
 public class Player extends Dealer {
+    // Player-specific properties
     private final String m_name;
     private final int m_id;
     private int m_balance;
@@ -8,6 +9,7 @@ public class Player extends Dealer {
     private boolean m_active = true;
     private boolean fiveCardCharlieAchieved = false;
 
+    // Constructor
     public Player(String name, int id, int balance) {
         this.m_id = id;
         this.m_name = name;

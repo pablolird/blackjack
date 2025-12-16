@@ -13,7 +13,7 @@ import com.badlogic.gdx.math.Vector2;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
+// ENTITY COMPONENT SYSTEM
 public class ECS {
     private final Get g;
     private final EntityManager entityManager;

@@ -1,6 +1,9 @@
 package com.badlogic.blackjack.game;
 
+// Card class
 public class Card {
+    // ID tracking is necessary to reference specific cards for animations or logic, as well as for
+    // synchronization in multiplayer.
     private static int nextId = 0;
     public final int m_id;
     private final String m_rank;
@@ -12,9 +15,11 @@ public class Card {
         this.m_rank = rank;
         this.m_suit = suit;
 
+        // Q, J, K all worth 10 in blackjack
         if (rank.equals("Q") || rank.equals("J") || rank.equals("K")) {
             this.m_value = 10;
         }
+        // Aces are first assigned 11, but can change to a 1 later in calculations
         else if (rank.equals("A")) {
             this.m_value = 11;
         }

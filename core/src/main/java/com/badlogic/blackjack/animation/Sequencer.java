@@ -38,7 +38,7 @@ public class Sequencer {
     }
 
     public void update(float delta) {
-        // Remove element avoiding iterator invalidation
+        // Run actions in order; completed actions are removed each frame
         actions.removeIf(a -> a.update(delta));
     }
 
@@ -144,8 +144,7 @@ public class Sequencer {
      * @param ui Optional UI reference to look up visual position index. If provided, uses visual position instead of array index.
      * @return A ParallelAction containing all the necessary animations.
      */
-    // MODIFICATIONS TO MAKE:
-    //  - MAKE CARDS CENTERED WITH RESPECT TO PLAYER DECK POSITION
+
     public void createDealCardAction(Player p, int playerIndex) {
         createDealCardAction(p, playerIndex, -1, null);
     }
