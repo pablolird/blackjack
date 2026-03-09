@@ -1,6 +1,5 @@
 <p align="center">
-<!-- Logo image: a stylized blackjack logo with cards and chips, similar to the lwjgl3/icons/logo.png -->
-<img src="lwjgl3/icons/logo.png" alt="Blackjack logo" width="200"/>
+<img width="895" height="622" alt="Blackjack" src="https://github.com/user-attachments/assets/49fc5109-4c6f-413b-9587-59e8c1bb556b" />
 </p>
 
 <p align="center">
@@ -23,7 +22,11 @@
 
 ---
 
-<!-- Gameplay showcase: a GIF or short video showing a full round of blackjack — dealing cards, a player hitting, then the dealer resolving -->
+
+
+https://github.com/user-attachments/assets/e9205575-d682-44c8-af90-ce2d8eb57cfb
+
+
 
 ---
 
@@ -45,19 +48,21 @@
 
 ### 🏠 Local Game
 
-<!-- Screenshot or GIF of the local game screen with multiple player windows laid out around the table -->
+<img width="2290" height="1276" alt="image" src="https://github.com/user-attachments/assets/9d310884-df25-4679-abb6-08b98b72bda8" />
+
 
 Multiple players on a single machine take turns. Each player has their own hand, balance, and action controls.
 
 ### 🌐 Host a Game
 
-<!-- Screenshot of the host lobby screen, showing the waiting room as clients connect -->
+<img width="1584" height="872" alt="image" src="https://github.com/user-attachments/assets/85b50907-bb1d-4700-9f20-55ed54eb0a5d" />
 
 Create a server and wait for other players to connect over your local network. You control when the game starts.
 
 ### 🔗 Join a Game
 
-<!-- Screenshot of the join/client lobby screen with an IP address input field -->
+<img width="1574" height="872" alt="image" src="https://github.com/user-attachments/assets/dd29721a-28d3-477f-8900-2fc9bce5eec7" />
+
 
 Enter the host's IP address to connect and join the table as a client.
 
