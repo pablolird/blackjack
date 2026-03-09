@@ -1,5 +1,5 @@
 <p align="center">
-<img width="895" height="622" alt="Blackjack" src="https://github.com/user-attachments/assets/49fc5109-4c6f-413b-9587-59e8c1bb556b" />
+<img width="920" height="302" alt="image" src="https://github.com/user-attachments/assets/2efa3867-c90f-41cf-a469-b11688e308a1" />
 </p>
 
 <p align="center">
