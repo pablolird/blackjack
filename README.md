@@ -1,33 +1,203 @@
-# Blackjack
+<p align="center">
+<!-- Logo image: a stylized blackjack logo with cards and chips, similar to the lwjgl3/icons/logo.png -->
+<img src="lwjgl3/icons/logo.png" alt="Blackjack logo" width="200"/>
+</p>
 
-A [libGDX](https://libgdx.com/) project generated with [gdx-liftoff](https://github.com/libgdx/gdx-liftoff).
+<p align="center">
+  <img src="https://img.shields.io/github/created-at/pablolird/blackjack"/>
+  <img src="https://img.shields.io/github/contributors/pablolird/blackjack"/>
+</p>
 
-This project was generated with a template including simple application launchers and an empty `ApplicationListener` implementation.
+---
 
-## Platforms
+<p align="center">
+  <img src="https://img.shields.io/badge/Java-ED8B00?logo=openjdk&logoColor=fff&style=for-the-badge" alt="Java Badge"/>
+  <img src="https://img.shields.io/badge/libGDX-E74C3C?logoColor=fff&style=for-the-badge" alt="libGDX Badge"/>
+  <img src="https://img.shields.io/badge/Gradle-02303A?logo=gradle&logoColor=fff&style=for-the-badge" alt="Gradle Badge"/>
+  <img src="https://img.shields.io/badge/KryoNet-5C2D91?logoColor=fff&style=for-the-badge" alt="KryoNet Badge"/>
+</p>
 
-- `core`: Main module with the application logic shared by all platforms.
-- `lwjgl3`: Primary desktop platform using LWJGL3; was called 'desktop' in older docs.
+# 🃏 Blackjack
 
-## Gradle
+**Blackjack** is a fully-featured card game built with [libGDX](https://libgdx.com/), supporting both local multiplayer (same machine, multiple players) and networked multiplayer (host/join over LAN). Featuring card animations, a betting system, and a clean Entity Component System architecture.
 
-This project uses [Gradle](https://gradle.org/) to manage dependencies.
-The Gradle wrapper was included, so you can run Gradle tasks using `gradlew.bat` or `./gradlew` commands.
-Useful Gradle tasks and flags:
+---
 
-- `--continue`: when using this flag, errors will not stop the tasks from running.
-- `--daemon`: thanks to this flag, Gradle daemon will be used to run chosen tasks.
-- `--offline`: when using this flag, cached dependency archives will be used.
-- `--refresh-dependencies`: this flag forces validation of all dependencies. Useful for snapshot versions.
-- `build`: builds sources and archives of every project.
-- `cleanEclipse`: removes Eclipse project data.
-- `cleanIdea`: removes IntelliJ project data.
-- `clean`: removes `build` folders, which store compiled classes and built archives.
-- `eclipse`: generates Eclipse project data.
-- `idea`: generates IntelliJ project data.
-- `lwjgl3:jar`: builds application's runnable jar, which can be found at `lwjgl3/build/libs`.
-- `lwjgl3:run`: starts the application.
-- `test`: runs unit tests (if any).
+<!-- Gameplay showcase: a GIF or short video showing a full round of blackjack — dealing cards, a player hitting, then the dealer resolving -->
 
-Note that most tasks that are not specific to a single project can be run with `name:` prefix, where the `name` should be replaced with the ID of a specific project.
-For example, `core:clean` removes `build` folder only from the `core` project.
+---
+
+## 🌟 Features
+
+* **Local Multiplayer**: 2–7 players take turns on the same machine.
+* **Network Multiplayer**: Host a game or join one over LAN using an IP address.
+* **Betting System**: Each player starts with a balance and places bets each round.
+* **Card Animations**: Smooth dealing and card movement sequences.
+* **Turn Timer**: 15-second countdown per player action — no stalling.
+* **Five Card Charlie**: Win automatically with 5 cards under 21.
+* **Double Down**: Double your bet and take exactly one more card.
+* **Restart / Exit**: Restart or exit the match at any time from in-game.
+* **ECS Architecture**: Modular Entity Component System for clean game object management.
+
+---
+
+## 🎮 Game Modes
+
+### 🏠 Local Game
+
+<!-- Screenshot or GIF of the local game screen with multiple player windows laid out around the table -->
+
+Multiple players on a single machine take turns. Each player has their own hand, balance, and action controls.
+
+### 🌐 Host a Game
+
+<!-- Screenshot of the host lobby screen, showing the waiting room as clients connect -->
+
+Create a server and wait for other players to connect over your local network. You control when the game starts.
+
+### 🔗 Join a Game
+
+<!-- Screenshot of the join/client lobby screen with an IP address input field -->
+
+Enter the host's IP address to connect and join the table as a client.
+
+---
+
+## 🛠️ Technologies Used
+
+| Technology | Role |
+|---|---|
+| **Java 8+** | Core language |
+| **libGDX 1.13.1** | 2D game framework (rendering, input, audio) |
+| **LWJGL3** | Desktop platform backend (Windows, macOS, Linux) |
+| **KryoNet 2.22.9** | TCP/UDP networking and packet serialization |
+| **Scene2D** | UI layout system (stages, tables, skins) |
+| **Gradle** | Build system |
+
+---
+
+## 📂 Project Structure
+
+```
+blackjack/
+│
+├── core/                          # Shared game logic (platform-independent)
+│   └── src/main/java/com/badlogic/blackjack/
+│       ├── animation/             # Animation sequencer and actions
+│       ├── assets/                # Asset manager wrapper
+│       ├── audio/                 # Sound and music management
+│       ├── ecs/                   # Entity Component System
+│       │   ├── components/        # CCard, CSprite, CAnimation, etc.
+│       │   ├── systems/           # RenderSystem
+│       │   ├── Entity.java
+│       │   ├── EntityManager.java
+│       │   └── ECS.java
+│       ├── game/                  # Core blackjack logic
+│       │   ├── BlackjackLogic.java
+│       │   ├── Card.java / Deck.java
+│       │   ├── Player.java / Dealer.java
+│       │   └── GameState.java
+│       ├── lobby/                 # Host and client lobby screens
+│       ├── network/               # GameClient, GameServer, NetworkPacket
+│       ├── ui/                    # UI components (PlayerWindow, GameButton, Timer)
+│       ├── GameScreen.java        # Main in-game screen
+│       ├── StartScreen.java       # Main menu
+│       └── Main.java              # Entry point
+│
+├── lwjgl3/                        # Desktop launcher module
+│   ├── src/.../Lwjgl3Launcher.java
+│   └── icons/                     # App icons (.icns, .ico, .png)
+│
+├── assets/                        # Game assets
+│   ├── *.png                      # Card sprites, backgrounds
+│   ├── *.wav / *.mp3              # Sound effects and music
+│   ├── fonts/                     # Bitmap fonts
+│   └── SKIN_JSON2/                # UI skin definition
+│
+├── build.gradle
+├── settings.gradle
+└── gradle.properties
+```
+
+---
+
+## 🚀 Setup and Installation
+
+### Prerequisites
+
+* **Java JDK 8+** — [Download here](https://adoptium.net/)
+* No other installs needed — Gradle wrapper is included.
+
+### Steps
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/pablolird/blackjack.git
+   cd blackjack
+   ```
+
+2. **Run the game:**
+   ```bash
+   ./gradlew lwjgl3:run
+   ```
+   On Windows:
+   ```bash
+   gradlew.bat lwjgl3:run
+   ```
+
+3. **Build a standalone JAR:**
+   ```bash
+   ./gradlew lwjgl3:jar
+   java -jar lwjgl3/build/libs/Blackjack-1.0.0.jar
+   ```
+   Or build for a specific platform:
+   ```bash
+   ./gradlew jarMac    # macOS
+   ./gradlew jarLinux  # Linux
+   ./gradlew jarWin    # Windows
+   ```
+
+---
+
+## 🎮 How to Play
+
+### Starting the Game
+
+1. Launch the game with `./gradlew lwjgl3:run`.
+2. From the main menu, choose a mode:
+   * **Local Game** — select the number of players and start.
+   * **Host Game** — create a server; share your local IP with others to join.
+   * **Join Game** — enter the host's IP address to connect.
+
+### Gameplay
+
+1. **Betting Phase**: Each player places their bet using the bet controls.
+2. **Dealing**: Cards are dealt to all players and the dealer.
+3. **Player Turns**: On your turn, choose an action:
+   * **Hit** — draw another card.
+   * **Stand** — end your turn.
+   * **Double Down** — double your bet and take one final card.
+4. **Dealer Turn**: The dealer draws until reaching 17 or higher.
+5. **Resolution**: Hands are compared. Bust = lose. Closer to 21 = win. Blackjack beats everything.
+6. **Five Card Charlie**: Automatically win if you hold 5 cards without busting.
+
+### Network Multiplayer Notes
+
+* The host machine must have TCP port `54555` and UDP port `54777` accessible on the local network.
+* Clients enter the host's LAN IP (e.g. `192.168.x.x`) to connect.
+* The host starts the game from the lobby once all players have joined.
+
+---
+
+## ⌨️ IDE Setup
+
+Generate project files for your preferred IDE:
+
+```bash
+./gradlew idea     # IntelliJ IDEA
+./gradlew eclipse  # Eclipse
+```
+
+---
+
+Enjoy the game — and may the dealer always bust! 🃏
